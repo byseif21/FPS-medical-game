@@ -179,35 +179,67 @@
         if (intersects.length > 0) mountain.position.y = intersects[0].point.y;
       }
 
-      const treeCount = 20;
-      for (let i = 0; i < treeCount; i++) {
-        const tree = new THREE.Group();
-        const trunkHeight = 4 + Math.random() * 3;
-        const trunkRadius = 0.4 + Math.random() * 0.2;
-        const foliageHeight = 6 + Math.random() * 3;
-        const foliageRadius = 2 + Math.random() * 1;
-        const trunkGeometry = new THREE.CylinderGeometry(trunkRadius, trunkRadius, trunkHeight, 8);
-        const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
-        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-        trunk.position.y = trunkHeight / 2;
-        trunk.castShadow = true;
-        tree.add(trunk);
-        const foliageGeometry = new THREE.ConeGeometry(foliageRadius, foliageHeight, 8);
-        const foliageMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22 });
-        const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-        foliage.position.y = trunkHeight + foliageHeight / 2;
-        foliage.castShadow = true;
-        tree.add(foliage);
-        const x = -terrainSize / 2 + Math.random() * terrainSize;
-        const z = -terrainSize / 2 + Math.random() * terrainSize;
-        tree.position.set(x, 100, z);
-        const ray = new THREE.Raycaster(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
-        const intersects = ray.intersectObject(terrain);
-        if (intersects.length > 0) tree.position.y = intersects[0].point.y;
-        else tree.position.y = -5;
-        tree.scale.set(1 + Math.random() * 0.3, 1 + Math.random() * 0.3, 1 + Math.random() * 0.3);
-        scene.add(tree);
-      }
+      const treeCount = 5;
+      const mtlLoader = new THREE.MTLLoader();
+      const objLoader = new THREE.OBJLoader();
+      mtlLoader.setPath('assets/models/tree/');
+      mtlLoader.setResourcePath('assets/models/tree/');
+      mtlLoader.load('trees9.mtl', (materials) => {
+        materials.preload();
+        objLoader.setMaterials(materials);
+        objLoader.setPath('assets/models/tree/');
+        objLoader.load('trees9.obj', (treeObject) => {
+          treeObject.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          // Fixed tree at far left front
+          const leftTree = treeObject.clone();
+          leftTree.position.set(-terrainSize/2 + 20, 100, -20);
+          const leftRay = new THREE.Raycaster(new THREE.Vector3(leftTree.position.x, 100, leftTree.position.z), new THREE.Vector3(0, -1, 0));
+          const leftIntersects = leftRay.intersectObject(terrain);
+          leftTree.position.y = leftIntersects.length > 0 ? leftIntersects[0].point.y : -5;
+          leftTree.scale.set(1.2, 1.2, 1.2);
+          leftTree.rotation.y = Math.PI/4;
+          scene.add(leftTree);
+
+          // Fixed tree at far right front
+          const rightTree = treeObject.clone();
+          rightTree.position.set(terrainSize/2 - 20, 100, -20);
+          const rightRay = new THREE.Raycaster(new THREE.Vector3(rightTree.position.x, 100, rightTree.position.z), new THREE.Vector3(0, -1, 0));
+          const rightIntersects = rightRay.intersectObject(terrain);
+          rightTree.position.y = rightIntersects.length > 0 ? rightIntersects[0].point.y : -5;
+          rightTree.scale.set(1.2, 1.2, 1.2);
+          rightTree.rotation.y = -Math.PI/4;
+          scene.add(rightTree);
+
+          // Remaining trees with center exclusion
+          for (let i = 0; i < treeCount - 2; i++) {
+            const tree = treeObject.clone();
+            let x, z;
+            do {
+              x = -terrainSize/2 + Math.random() * terrainSize;
+              z = -terrainSize/2 + Math.random() * terrainSize;
+            } while (Math.abs(x) < 30 && z > -40);
+            
+            tree.position.set(x, 100, z);
+            const ray = new THREE.Raycaster(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
+            const intersects = ray.intersectObject(terrain);
+            if (intersects.length > 0) tree.position.y = intersects[0].point.y;
+            else tree.position.y = -5;
+            tree.scale.set(1 + Math.random() * 0.3, 1 + Math.random() * 0.3, 1 + Math.random() * 0.3);
+            tree.rotation.y = Math.random() * Math.PI * 2;
+            scene.add(tree);
+          }
+        }, undefined, (error) => {
+          console.error('Error loading tree9.obj:', error);
+        });
+      }, undefined, (error) => {
+        console.error('Error loading tree9.mtl:', error);
+      });
 
       const targetBoardGeometry = new THREE.PlaneGeometry(6, 12);
       const targetBoardMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF });
@@ -232,7 +264,6 @@
           scene.add(ring);
         }
       }
-
 
       const rockCount = 15;
       for (let i = 0; i < rockCount; i++) {
@@ -274,8 +305,11 @@
       mtlLoader.load('targhet.mtl', (materials) => {
         materials.preload();
         const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('assets/models/targets/BLEND/texture.png', (texture) => {
-          texture.flipY = false;
+        textureLoader.load('assets/models/targets/BLEND/tt4.jpg', (texture) => {
+          texture.flipY = true;
+          texture.repeat.set(2.5, 2.5);
+          texture.offset.set(0.08, 0.03);
+          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
           texture.encoding = THREE.sRGBEncoding;
           const objLoader = new THREE.OBJLoader();
           objLoader.setMaterials(materials);
@@ -310,55 +344,30 @@
 
       function createTarget(originalObject, index, isGoodTarget) {
         const targetMesh = originalObject.clone();
-        // Set initial position
-        targetMesh.position.set(
-            -60 + Math.random() * 120,
-            0,
-            -80 + Math.random() * 40
-        );
+        targetMesh.position.set(-60 + Math.random() * 120, 2, -80 + Math.random() * 40);
         targetMesh.scale.set(1.7, 1.7, 1.7);
-        
-        // Set initial rotation to stand upright (along Y-axis)
-        targetMesh.rotation.set(0, 0, 0);  // Reset rotation
-        // Make target face approximately toward camera (at z=50)
-        const cameraDirection = new THREE.Vector3(0, 10, 50).sub(targetMesh.position).normalize();
-        targetMesh.lookAt(targetMesh.position.clone().add(cameraDirection));
-        
+        targetMesh.rotation.set(-Math.PI / 2, 0, 0);
         targetMesh.traverse((child) => {
-            if (child.isMesh) {
-                child.material = child.material.clone();
-                child.material.color.setHex(isGoodTarget ? 0x00EE00 : 0xEE0000); // Balanced brightness
-                child.material.emissive.setHex(isGoodTarget ? 0x005500 : 0x550000); // Moderate glow
-                child.material.emissiveIntensity = 0.3;
-                child.material.roughness = 0.2; // Slightly reflective
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
+          if (child.isMesh) {
+            child.material = child.material.clone();
+            child.material.color.setHex(isGoodTarget ? 0x006600 : 0x660000);
+            child.material.emissive.setHex(isGoodTarget ? 0x002200 : 0x220000);
+            child.material.emissiveIntensity = 0.3;
+            child.material.roughness = 0.2;
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
         });
         scene.add(targetMesh);
 
-        const overlayGeometry = new THREE.SphereGeometry(1.2, 16, 16);
-        const overlayMaterial = new THREE.MeshBasicMaterial({
-            color: isGoodTarget ? 0x00EE00 : 0xEE0000,
-            transparent: true,
-            opacity: 0.2, // Balanced overlay
-            side: THREE.BackSide
-        });
-        const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
-        overlay.position.copy(targetMesh.position);
-        scene.add(overlay);
-
         targets.push({
-            mesh: targetMesh,
-            overlay: overlay,
-            hit: false,
-            isGoodTarget: isGoodTarget,
-            basePosition: targetMesh.position.clone(),
-            phase: Math.random() * Math.PI * 2,
-            speed: 0.5 + Math.random() * 0.4,
-            moveRangeX: 15 + Math.random() * 15,
-            moveRangeY: 0,
-            rotationSpeed: 0.03 + Math.random() * 0.04
+          mesh: targetMesh,
+          hit: false,
+          isGoodTarget: isGoodTarget,
+          basePosition: targetMesh.position.clone(),
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.5 + Math.random() * 0.4,
+          moveRangeX: 15 + Math.random() * 15
         });
       }
     }
@@ -561,7 +570,6 @@
     function handleHit(hitTarget) {
       if (!hitTarget || hitTarget.hit) return;
       hitTarget.hit = true;
-      scene.remove(hitTarget.overlay);
       if (!hitTarget.isGoodTarget) {
         score += isSniper ? 200 : 100;
         scoreElement.textContent = score;
@@ -627,44 +635,28 @@
       const time = currentTime * 0.001;
 
       targets.forEach(target => {
-    if (!target.hit) {
-        let newX = target.basePosition.x + Math.sin(time * target.speed + target.phase) * target.moveRangeX;
-        let newY = target.basePosition.y;
-        let newZ = target.basePosition.z;
+        if (!target.hit) {
+          let newX = target.basePosition.x + Math.sin(time * target.speed + target.phase) * target.moveRangeX;
+          let newY = target.basePosition.y;
+          let newZ = target.basePosition.z;
 
-        targets.forEach(otherTarget => {
+          targets.forEach(otherTarget => {
             if (otherTarget !== target && !otherTarget.hit) {
-                const dx = newX - otherTarget.mesh.position.x;
-                const dy = newY - otherTarget.mesh.position.y;
-                const dz = newZ - otherTarget.mesh.position.z;
-                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                if (distance < MIN_DISTANCE) {
-                    const pushFactor = (MIN_DISTANCE - distance) / MIN_DISTANCE;
-                    newX += dx * pushFactor * 0.1;
-                    newY += dy * pushFactor * 0.1;
-                    newZ += dz * pushFactor * 0.1;
-                }
+              const dx = newX - otherTarget.mesh.position.x;
+              const dy = newY - otherTarget.mesh.position.y;
+              const dz = newZ - otherTarget.mesh.position.z;
+              const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+              if (distance < MIN_DISTANCE) {
+                const pushFactor = (MIN_DISTANCE - distance) / MIN_DISTANCE;
+                newX += dx * pushFactor * 0.1;
+              }
             }
-        });
+          });
 
-        newX = THREE.MathUtils.clamp(newX, -70, 70);
-        newY = THREE.MathUtils.clamp(newY, 0, 0);
-        newZ = THREE.MathUtils.clamp(newZ, -90, -10);
-
-        target.mesh.position.set(newX, newY, newZ);
-        target.overlay.position.copy(target.mesh.position);
-        
-        // Maintain upright orientation while allowing slight rotation
-        target.mesh.rotation.x = 0;  // Keep upright
-        target.mesh.rotation.z = 0;  // Keep upright
-        target.mesh.rotation.y += target.rotationSpeed;  // Allow horizontal rotation
-        
-        // Optional: Make target face camera continuously
-        const cameraDirection = camera.position.clone().sub(target.mesh.position).normalize();
-        target.mesh.lookAt(target.mesh.position.clone().add(cameraDirection));
-        target.mesh.rotateX(-Math.PI / 2);  // Adjust if model is oriented incorrectly
-    }
-});
+          newX = THREE.MathUtils.clamp(newX, -70, 70);
+          target.mesh.position.set(newX, newY, newZ);
+        }
+      });
 
       renderer.render(scene, camera);
     }

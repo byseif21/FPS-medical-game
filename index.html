@@ -175,34 +175,83 @@
       const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
       scene.add(skybox);
 
-      const terrainSize = 300;
-      const terrainSegments = 64;
-      const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
-      const vertices = terrainGeometry.attributes.position.array;
-      for (let i = 0; i < terrainGeometry.attributes.position.count; i++) {
-        const x = (i % (terrainSegments + 1)) / terrainSegments;
-        const y = Math.floor(i / (terrainSegments + 1)) / terrainSegments;
-        const noise = Math.sin(x * 5) * Math.cos(y * 5) * 1 + Math.random() * 0.3;
-        vertices[i * 3 + 2] = noise;
-      }
-      terrainGeometry.computeVertexNormals();
-
-      // Use a more earthy texture or color
+      // Create a solid, reliable ground using the available textures
+      const terrainSize = 500; // Larger terrain to cover more area
+      const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 32, 32); // Add some segments for displacement
+      
+      // Use the textures from the models/ground/textures folder
       const textureLoader = new THREE.TextureLoader();
-      const groundTexture = textureLoader.load('assets/textures/ground.jpg', (texture) => {
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(10, 10); // Repeat texture for better coverage
-      }, undefined, (error) => {
-        console.error('Error loading ground texture:', error);
+      const texturePath = 'assets/models/ground/textures/';
+      
+      // Initialize with a basic material that will be enhanced with textures
+      const terrainMaterial = new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        roughness: 1.0,
+        metalness: 0.0,
+        side: THREE.FrontSide
       });
-      const terrainMaterial = new THREE.MeshPhongMaterial({
-        map: groundTexture || null, // Fallback to color if texture fails
-        color: groundTexture ? 0xffffff : 0x8B4513, // Brown if no texture
-        shininess: 5,
-        flatShading: false,
-      });
+      
+      // Load the diffuse texture (color)
+      textureLoader.load(texturePath + 'rocky_terrain_02_diff_4k.jpg', 
+        (texture) => {
+          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          terrainMaterial.map = texture;
+          terrainMaterial.needsUpdate = true;
+        }
+      );
+      
+      // Load the roughness texture
+      textureLoader.load(texturePath + 'rocky_terrain_02_rough_4k.exr', 
+        (texture) => {
+          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          terrainMaterial.roughnessMap = texture;
+          terrainMaterial.needsUpdate = true;
+        }
+      );
+      
+      // Add some subtle vertex displacement using the displacement map
+      textureLoader.load(texturePath + 'rocky_terrain_02_disp_4k.png', 
+        (texture) => {
+          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          
+          // Displace the vertices for a more 3D look
+          const vertices = terrainGeometry.attributes.position.array;
+          const img = texture.image;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          
+          const terrainSegments = 32;
+          try {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            for (let i = 0; i < terrainGeometry.attributes.position.count; i++) {
+              const idx = i * 3;
+              const u = (i % (terrainSegments + 1)) / terrainSegments;
+              const v = Math.floor(i / (terrainSegments + 1)) / terrainSegments;
+              
+              const pixelX = Math.floor(u * canvas.width);
+              const pixelY = Math.floor(v * canvas.height);
+              const pixelIdx = (pixelY * canvas.width + pixelX) * 4;
+              
+              // Use the red channel for height (0-255)
+              const height = imgData[pixelIdx] / 255.0 * 3.0; // Scale height to 3 units max
+              vertices[idx + 2] = height;
+            }
+            terrainGeometry.attributes.position.needsUpdate = true;
+            terrainGeometry.computeVertexNormals();
+          } catch (e) {
+            console.error('Error applying displacement:', e);
+          }
+        }
+      );
+      
       const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-      terrain.rotation.x = -Math.PI / 2;
+      terrain.rotation.x = -Math.PI / 2; // Rotate to be horizontal
       terrain.position.y = -5;
       terrain.receiveShadow = true;
       scene.add(terrain);
@@ -333,6 +382,7 @@
         mtlLoader.setPath('assets/models/targets/OBJ/');
         mtlLoader.load('targhet.mtl', (materials) => {
           materials.preload();
+          const objLoader = new THREE.OBJLoader();
           objLoader.setMaterials(materials);
           objLoader.setPath('assets/models/targets/');
           objLoader.load('targhet.obj', (object) => {

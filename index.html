@@ -1,105 +1,22 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <title>Medical 3D Targeting Game</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    #gameCanvas {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    #hud {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      color: white;
-      font-size: 24px;
-      z-index: 2;
-      user-select: none;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    }
-
-    #weaponInfo {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      color: white;
-      font-size: 20px;
-      z-index: 2;
-      user-select: none;
-      text-align: right;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    }
-
-    #crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    #gameOver,
-    #instructions {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      z-index: 4;
-      max-width: 80%;
-    }
-
-    #gameOver {
-      display: none;
-    }
-
-    button {
-      background-color: #4CAF50;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 16px;
-      margin: 10px 2px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    .hitmarker {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 24px;
-      pointer-events: none;
-      opacity: 1;
-      transition: opacity 0.3s;
-      z-index: 3;
-    }
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    #gameCanvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
+    #hud { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; z-index: 2; user-select: none; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); }
+    #weaponInfo { position: absolute; bottom: 20px; right: 20px; color: white; font-size: 20px; z-index: 2; user-select: none; text-align: right; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); }
+    #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; }
+    #gameOver, #instructions { width: 340px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.8); color: white; padding: 15px; border-radius: 10px; text-align: center; z-index: 4; max-width: 80%; }
+    #gameOver { display: none; }
+    button { background-color: #4CAF50; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 10px 2px; cursor: pointer; border-radius: 5px; }
+    .hitmarker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 24px; pointer-events: none; opacity: 1; transition: opacity 0.3s; z-index: 3; }
   </style>
 </head>
 
 <body>
-  <div id="hud">العلاج الناجح: <span id="score">0</span><br>المرحلة: <span id="wave">1</span><br>الخلايا المريضة
-    المتبقية: <span id="targetsLeft">0</span></div>
+  <div id="hud">العلاج الناجح: <span id="score">0</span><br>المرحلة: <span id="wave">1</span><br>الخلايا المريضة المتبقية: <span id="targetsLeft">0</span></div>
   <div id="weaponInfo">الدواء: <span id="weaponName">توزيع منتشر</span></div>
   <div id="crosshair">+</div>
   <div id="gameOver">
@@ -149,9 +66,8 @@
     let weapons = null;
     let lastShotTime = 0;
     let reloadTime = 200;
-    const targetCount = 3;
-    const MOVE_RANGE = 15;
-    const MIN_DISTANCE = 5;
+    const baseTargetCount = 3;
+    const MIN_DISTANCE = 8;
     const MOUSE_SENSITIVITY = 0.002;
     const MAX_ROTATION_X = Math.PI / 3;
     const MIN_ROTATION_X = -Math.PI / 3;
@@ -175,83 +91,63 @@
       const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
       scene.add(skybox);
 
-      // Create a solid, reliable ground using the available textures
-      const terrainSize = 500; // Larger terrain to cover more area
-      const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 32, 32); // Add some segments for displacement
-      
-      // Use the textures from the models/ground/textures folder
+      const terrainSize = 500;
+      const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 32, 32);
       const textureLoader = new THREE.TextureLoader();
       const texturePath = 'assets/models/ground/textures/';
-      
-      // Initialize with a basic material that will be enhanced with textures
       const terrainMaterial = new THREE.MeshStandardMaterial({
         color: 0x888888,
         roughness: 1.0,
         metalness: 0.0,
         side: THREE.FrontSide
       });
-      
-      // Load the diffuse texture (color)
-      textureLoader.load(texturePath + 'rocky_terrain_02_diff_4k.jpg', 
-        (texture) => {
-          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(1, 1);
-          terrainMaterial.map = texture;
-          terrainMaterial.needsUpdate = true;
-        }
-      );
-      
-      // Load the roughness texture
-      textureLoader.load(texturePath + 'rocky_terrain_02_rough_4k.exr', 
-        (texture) => {
-          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(1, 1);
-          terrainMaterial.roughnessMap = texture;
-          terrainMaterial.needsUpdate = true;
-        }
-      );
-      
-      // Add some subtle vertex displacement using the displacement map
-      textureLoader.load(texturePath + 'rocky_terrain_02_disp_4k.png', 
-        (texture) => {
-          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(1, 1);
-          
-          // Displace the vertices for a more 3D look
-          const vertices = terrainGeometry.attributes.position.array;
-          const img = texture.image;
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          
-          const terrainSegments = 32;
-          try {
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            for (let i = 0; i < terrainGeometry.attributes.position.count; i++) {
-              const idx = i * 3;
-              const u = (i % (terrainSegments + 1)) / terrainSegments;
-              const v = Math.floor(i / (terrainSegments + 1)) / terrainSegments;
-              
-              const pixelX = Math.floor(u * canvas.width);
-              const pixelY = Math.floor(v * canvas.height);
-              const pixelIdx = (pixelY * canvas.width + pixelX) * 4;
-              
-              // Use the red channel for height (0-255)
-              const height = imgData[pixelIdx] / 255.0 * 3.0; // Scale height to 3 units max
-              vertices[idx + 2] = height;
-            }
-            terrainGeometry.attributes.position.needsUpdate = true;
-            terrainGeometry.computeVertexNormals();
-          } catch (e) {
-            console.error('Error applying displacement:', e);
+
+      textureLoader.load(texturePath + 'rocky_terrain_02_diff_4k.jpg', (texture) => {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(1, 1);
+        terrainMaterial.map = texture;
+        terrainMaterial.needsUpdate = true;
+      });
+
+      textureLoader.load(texturePath + 'rocky_terrain_02_rough_4k.exr', (texture) => {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(1, 1);
+        terrainMaterial.roughnessMap = texture;
+        terrainMaterial.needsUpdate = true;
+      });
+
+      textureLoader.load(texturePath + 'rocky_terrain_02_disp_4k.png', (texture) => {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(1, 1);
+        const vertices = terrainGeometry.attributes.position.array;
+        const img = texture.image;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const terrainSegments = 32;
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          for (let i = 0; i < terrainGeometry.attributes.position.count; i++) {
+            const idx = i * 3;
+            const u = (i % (terrainSegments + 1)) / terrainSegments;
+            const v = Math.floor(i / (terrainSegments + 1)) / terrainSegments;
+            const pixelX = Math.floor(u * canvas.width);
+            const pixelY = Math.floor(v * canvas.height);
+            const pixelIdx = (pixelY * canvas.width + pixelX) * 4;
+            const height = imgData[pixelIdx] / 255.0 * 3.0;
+            vertices[idx + 2] = height;
           }
+          terrainGeometry.attributes.position.needsUpdate = true;
+          terrainGeometry.computeVertexNormals();
+        } catch (e) {
+          console.error('Error applying displacement:', e);
         }
-      );
-      
+      });
+
       const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-      terrain.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+      terrain.rotation.x = -Math.PI / 2;
       terrain.position.y = -5;
       terrain.receiveShadow = true;
       scene.add(terrain);
@@ -273,7 +169,7 @@
       const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0x8B5A2B, shininess: 10, flatShading: false });
       for (let i = 0; i < 3; i++) {
         const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
-        mountain.position.set(-50 + i * 50, -5, -200);
+        mountain.position.set(-50 + i * 50, -5, -300);
         mountain.scale.set(1 + Math.random() * 0.5, 0.5 + Math.random() * 0.3, 1 + Math.random() * 0.5);
         mountain.rotation.y = Math.random() * Math.PI;
         mountain.receiveShadow = true;
@@ -313,29 +209,12 @@
         scene.add(tree);
       }
 
-      const rockCount = 15;
-      for (let i = 0; i < rockCount; i++) {
-        const rockGeometry = new THREE.SphereGeometry(1.5 + Math.random() * 1, 8, 8);
-        const rockMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-        const x = -terrainSize / 2 + Math.random() * terrainSize;
-        const z = -terrainSize / 2 + Math.random() * terrainSize;
-        rock.position.set(x, 100, z);
-        rock.scale.set(1 + Math.random(), 0.5 + Math.random() * 0.5, 1 + Math.random());
-        rock.castShadow = true;
-        const ray = new THREE.Raycaster(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
-        const intersects = ray.intersectObject(terrain);
-        if (intersects.length > 0) rock.position.y = intersects[0].point.y + 0.5;
-        else rock.position.y = -5 + 0.5;
-        scene.add(rock);
-      }
-
       const targetBoardGeometry = new THREE.PlaneGeometry(6, 12);
       const targetBoardMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF });
       const targetPositions = [-20, 0, 20];
       for (let i = 0; i < targetPositions.length; i++) {
         const targetBoard = new THREE.Mesh(targetBoardGeometry, targetBoardMaterial);
-        targetBoard.position.set(targetPositions[i], 3, -60);
+        targetBoard.position.set(targetPositions[i], 3, -140);
         targetBoard.castShadow = true;
         scene.add(targetBoard);
         const targetCircleGeometry = new THREE.CircleGeometry(2, 32);
@@ -354,9 +233,27 @@
         }
       }
 
-      const ambientLight = new THREE.AmbientLight(0x404040, 0.8); // Reduced intensity to avoid washing out
+
+      const rockCount = 15;
+      for (let i = 0; i < rockCount; i++) {
+        const rockGeometry = new THREE.SphereGeometry(1.5 + Math.random() * 1, 8, 8);
+        const rockMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        const x = -terrainSize / 2 + Math.random() * terrainSize;
+        const z = -terrainSize / 2 + Math.random() * terrainSize;
+        rock.position.set(x, 100, z);
+        rock.scale.set(1 + Math.random(), 0.5 + Math.random() * 0.5, 1 + Math.random());
+        rock.castShadow = true;
+        const ray = new THREE.Raycaster(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
+        const intersects = ray.intersectObject(terrain);
+        if (intersects.length > 0) rock.position.y = intersects[0].point.y + 0.5;
+        else rock.position.y = -5 + 0.5;
+        scene.add(rock);
+      }
+
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
       scene.add(ambientLight);
-      const sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5); // Adjusted intensity
+      const sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
       sunlight.position.set(50, 100, 50);
       sunlight.castShadow = true;
       sunlight.shadow.mapSize.width = 1024;
@@ -373,116 +270,181 @@
     function createTargets() {
       targets = [];
       const mtlLoader = new THREE.MTLLoader();
-      const textureLoader = new THREE.TextureLoader();
-      const objLoader = new THREE.OBJLoader();
-
-      textureLoader.load('assets/models/targets/BLEND/texture.png', (texture) => {
-        texture.flipY = false;
-
-        mtlLoader.setPath('assets/models/targets/OBJ/');
-        mtlLoader.load('targhet.mtl', (materials) => {
-          materials.preload();
+      mtlLoader.setPath('assets/models/targets/BLEND/');
+      mtlLoader.load('targhet.mtl', (materials) => {
+        materials.preload();
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load('assets/models/targets/BLEND/texture.png', (texture) => {
+          texture.flipY = false;
+          texture.encoding = THREE.sRGBEncoding;
           const objLoader = new THREE.OBJLoader();
           objLoader.setMaterials(materials);
-          objLoader.setPath('assets/models/targets/');
+          objLoader.setPath('assets/models/targets/BLEND/');
           objLoader.load('targhet.obj', (object) => {
-            const targetPositions = [-20, 0, 20];
-            for (let i = 0; i < targetCount; i++) {
-              const isGoodTarget = Math.random() < 0.4;
-              const xPos = targetPositions[i];
-              const zPos = -30 - Math.floor(i / 2) * 20;
-              const targetMesh = object.clone();
-              targetMesh.position.set(xPos, 5, zPos);
-              targetMesh.scale.set(1.5, 1.5, 1.5);
-
-              targetMesh.traverse((child) => {
-                if (child.isMesh) {
-                  child.material = new THREE.MeshPhongMaterial({
-                    map: texture,
-                    color: 0xffffff, // Base color white to let texture show
-                    shininess: 100,
-                    specular: 0xffffff
-                  });
-                  child.geometry.computeBoundingSphere();
-                }
-              });
-
-              // Add a colored overlay to indicate good/bad targets
-              const overlayGeometry = new THREE.SphereGeometry(2, 16, 16);
-              const overlayMaterial = new THREE.MeshBasicMaterial({
-                color: isGoodTarget ? 0x00ff00 : 0xff0000,
-                transparent: true,
-                opacity: 0.3,
-                depthWrite: false // Ensures overlay doesn't obscure target
-              });
-              const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
-              overlay.position.copy(targetMesh.position);
-              scene.add(overlay);
-
-              scene.add(targetMesh);
-
-              targets.push({
-                mesh: targetMesh,
-                overlay: overlay, // Store overlay for movement sync
-                isGoodTarget,
-                hit: false,
-                basePosition: targetMesh.position.clone(),
-                phase: Math.random() * Math.PI * 2,
-                speed: 0.6 + Math.random() * 0.4,
-                moveRange: MOVE_RANGE,
-                rotationSpeed: 0.02 + Math.random() * 0.03
-              });
+            object.traverse((child) => {
+              if (child.isMesh) {
+                child.material = new THREE.MeshPhongMaterial({
+                  map: texture,
+                  color: 0xffffff,
+                  specular: 0x111111,
+                  shininess: 50,
+                  transparent: false,
+                  opacity: 1.0,
+                  side: THREE.DoubleSide
+                });
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+            const spawnCount = baseTargetCount + wave * 2;
+            for (let i = 0; i < spawnCount; i++) {
+              createTarget(object, i, false);
+            }
+            for (let i = 0; i < Math.floor(spawnCount / 2); i++) {
+              createTarget(object, i + spawnCount, true);
             }
             targetsLeftElement.textContent = targets.filter(t => !t.isGoodTarget && !t.hit).length;
-          }, undefined, (error) => console.error('Error loading target model:', error));
-        }, undefined, (error) => console.error('Error loading target MTL:', error));
-      }, undefined, (error) => console.error('Error loading target texture:', error));
+          });
+        });
+      });
+
+      function createTarget(originalObject, index, isGoodTarget) {
+        const targetMesh = originalObject.clone();
+        // Set initial position
+        targetMesh.position.set(
+            -60 + Math.random() * 120,
+            0,
+            -80 + Math.random() * 40
+        );
+        targetMesh.scale.set(1.7, 1.7, 1.7);
+        
+        // Set initial rotation to stand upright (along Y-axis)
+        targetMesh.rotation.set(0, 0, 0);  // Reset rotation
+        // Make target face approximately toward camera (at z=50)
+        const cameraDirection = new THREE.Vector3(0, 10, 50).sub(targetMesh.position).normalize();
+        targetMesh.lookAt(targetMesh.position.clone().add(cameraDirection));
+        
+        targetMesh.traverse((child) => {
+            if (child.isMesh) {
+                child.material = child.material.clone();
+                child.material.color.setHex(isGoodTarget ? 0x00EE00 : 0xEE0000); // Balanced brightness
+                child.material.emissive.setHex(isGoodTarget ? 0x005500 : 0x550000); // Moderate glow
+                child.material.emissiveIntensity = 0.3;
+                child.material.roughness = 0.2; // Slightly reflective
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+        scene.add(targetMesh);
+
+        const overlayGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+        const overlayMaterial = new THREE.MeshBasicMaterial({
+            color: isGoodTarget ? 0x00EE00 : 0xEE0000,
+            transparent: true,
+            opacity: 0.2, // Balanced overlay
+            side: THREE.BackSide
+        });
+        const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+        overlay.position.copy(targetMesh.position);
+        scene.add(overlay);
+
+        targets.push({
+            mesh: targetMesh,
+            overlay: overlay,
+            hit: false,
+            isGoodTarget: isGoodTarget,
+            basePosition: targetMesh.position.clone(),
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.5 + Math.random() * 0.4,
+            moveRangeX: 15 + Math.random() * 15,
+            moveRangeY: 0,
+            rotationSpeed: 0.03 + Math.random() * 0.04
+        });
+      }
     }
 
     function createWeapons(callback) {
-      const mtlLoader = new THREE.MTLLoader();
-      mtlLoader.setPath('assets/models/shotgun/');
       const textureLoader = new THREE.TextureLoader();
-      const diffuseMap = textureLoader.load('assets/models/shotgun/Sg_Diffuse.png');
-      const normalMap = textureLoader.load('assets/models/shotgun/Sg_normals.png');
-      const specularMap = textureLoader.load('assets/models/shotgun/Sg_Spec.png');
 
-      mtlLoader.load('Shotgun.mtl', (materials) => {
-        materials.preload();
-        const objLoader = new THREE.OBJLoader();
-        objLoader.setMaterials(materials);
-        objLoader.setPath('assets/models/shotgun/');
-        objLoader.load('Shotgun.obj', (object) => {
-          object.traverse((child) => {
+      const shotgunMtlLoader = new THREE.MTLLoader();
+      shotgunMtlLoader.setPath('assets/models/shotgun/');
+      const shotgunDiffuseMap = textureLoader.load('assets/models/shotgun/Sg_Diffuse.png');
+      const shotgunNormalMap = textureLoader.load('assets/models/shotgun/Sg_normals.png');
+      const shotgunSpecularMap = textureLoader.load('assets/models/shotgun/Sg_Spec.png');
+
+      shotgunMtlLoader.load('Shotgun.mtl', (shotgunMaterials) => {
+        shotgunMaterials.preload();
+        const shotgunObjLoader = new THREE.OBJLoader();
+        shotgunObjLoader.setMaterials(shotgunMaterials);
+        shotgunObjLoader.setPath('assets/models/shotgun/');
+        shotgunObjLoader.load('Shotgun.obj', (shotgunObject) => {
+          shotgunObject.traverse((child) => {
             if (child.isMesh) {
-              child.material = new THREE.MeshPhongMaterial({ map: diffuseMap, normalMap: normalMap, specularMap: specularMap, shininess: 80, specular: 0x888888 });
+              child.material = new THREE.MeshPhongMaterial({
+                map: shotgunDiffuseMap,
+                normalMap: shotgunNormalMap,
+                specularMap: shotgunSpecularMap,
+                shininess: 80,
+                specular: 0x888888
+              });
+              child.castShadow = true;
             }
           });
-          const scatteredWeapon = new THREE.Group();
-          const precisionWeapon = new THREE.Group();
-          const handGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
-          const handMaterial = new THREE.MeshPhongMaterial({ color: 0xFFDAB9 });
-          const hand = new THREE.Mesh(handGeometry, handMaterial);
-          hand.position.set(0.5, -0.8, -0.5);
-          hand.rotation.set(0, 0, Math.PI / 4);
-          const scatteredModel = object.clone();
-          scatteredModel.scale.set(0.12, 0.12, 0.12);
-          scatteredModel.position.set(0.5, -0.6, -1.2);
-          scatteredModel.rotation.set(0, -Math.PI / 2, 0);
-          scatteredWeapon.add(scatteredModel);
-          scatteredWeapon.add(hand.clone());
-          const precisionModel = object.clone();
-          precisionModel.scale.set(0.12, 0.12, 0.12);
-          precisionModel.position.set(0.5, -0.6, -1.2);
-          precisionModel.rotation.set(0, -Math.PI / 2, 0);
-          precisionWeapon.add(precisionModel);
-          precisionWeapon.add(hand.clone());
-          precisionWeapon.visible = false;
-          camera.add(scatteredWeapon);
-          camera.add(precisionWeapon);
-          callback({ scatteredWeapon, precisionWeapon });
-        }, undefined, (error) => console.error('Error loading weapon model:', error));
-      }, undefined, (error) => console.error('Error loading weapon MTL:', error));
+
+          const sniperMtlLoader = new THREE.MTLLoader();
+          sniperMtlLoader.setPath('assets/models/sniper/textures/');
+          sniperMtlLoader.load('material.lib', (sniperMaterials) => {
+            sniperMaterials.preload();
+            const sniperObjLoader = new THREE.OBJLoader();
+            sniperObjLoader.setMaterials(sniperMaterials);
+            sniperObjLoader.setPath('assets/models/sniper/textures/');
+            sniperObjLoader.load('sniper3.obj', (sniperObject) => {
+              sniperObject.traverse((child) => {
+                if (child.isMesh) {
+                  child.material = new THREE.MeshStandardMaterial({
+                    map: textureLoader.load('assets/models/sniper/textures/sniper3Color.png'),
+                    normalMap: textureLoader.load('assets/models/sniper/textures/sniper3Normal.png'),
+                    metalnessMap: textureLoader.load('assets/models/sniper/textures/sniper3Metallic.png'),
+                    roughnessMap: textureLoader.load('assets/models/sniper/textures/sniper3Roughness.png'),
+                    metalness: 0.7,
+                    roughness: 0.3
+                  });
+                  child.castShadow = true;
+                }
+              });
+
+              const scatteredWeapon = new THREE.Group();
+              const precisionWeapon = new THREE.Group();
+
+              const handGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
+              const handMaterial = new THREE.MeshPhongMaterial({ color: 0xFFDAB9 });
+              const hand = new THREE.Mesh(handGeometry, handMaterial);
+              hand.position.set(0.5, -0.8, -0.5);
+              hand.rotation.set(0, 0, Math.PI / 4);
+
+              const scatteredModel = shotgunObject.clone();
+              scatteredModel.scale.set(0.12, 0.12, 0.12);
+              scatteredModel.position.set(0.5, -0.6, -1.2);
+              scatteredModel.rotation.set(0, -Math.PI / 2, 0);
+              scatteredWeapon.add(scatteredModel);
+              scatteredWeapon.add(hand.clone());
+
+              const precisionModel = sniperObject;
+              precisionModel.scale.set(0.03, 0.03, 0.03);
+              precisionModel.position.set(0.5, -0.5, -1.2);
+              precisionModel.rotation.set(0, Math.PI, 0);
+              precisionWeapon.add(precisionModel);
+              precisionWeapon.add(hand.clone());
+
+              precisionWeapon.visible = false;
+              camera.add(scatteredWeapon);
+              camera.add(precisionWeapon);
+
+              callback({ scatteredWeapon, precisionWeapon });
+            });
+          });
+        });
+      });
     }
 
     function setupControls() {
@@ -495,10 +457,7 @@
         newYaw = THREE.MathUtils.clamp(newYaw, MIN_ROTATION_Y, MAX_ROTATION_Y);
         camera.rotation.y = newYaw;
         let newPitch = camera.rotation.x - movementY * MOUSE_SENSITIVITY;
-        const yawFactor = Math.abs(camera.rotation.y) / (Math.PI / 2);
-        const maxPitchAtYaw = THREE.MathUtils.lerp(MAX_ROTATION_X, 0, yawFactor);
-        const minPitchAtYaw = THREE.MathUtils.lerp(MIN_ROTATION_X, 0, yawFactor);
-        newPitch = THREE.MathUtils.clamp(newPitch, minPitchAtYaw, maxPitchAtYaw);
+        newPitch = THREE.MathUtils.clamp(newPitch, MIN_ROTATION_X, MAX_ROTATION_X);
         camera.rotation.x = newPitch;
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -602,8 +561,7 @@
     function handleHit(hitTarget) {
       if (!hitTarget || hitTarget.hit) return;
       hitTarget.hit = true;
-      scene.remove(hitTarget.overlay); // Remove overlay when hit
-
+      scene.remove(hitTarget.overlay);
       if (!hitTarget.isGoodTarget) {
         score += isSniper ? 200 : 100;
         scoreElement.textContent = score;
@@ -669,31 +627,44 @@
       const time = currentTime * 0.001;
 
       targets.forEach(target => {
-        if (!target.hit) {
-          let newX = target.basePosition.x + Math.sin(time * target.speed + target.phase) * target.moveRange;
-          let newZ = target.basePosition.z;
-          targets.forEach(otherTarget => {
+    if (!target.hit) {
+        let newX = target.basePosition.x + Math.sin(time * target.speed + target.phase) * target.moveRangeX;
+        let newY = target.basePosition.y;
+        let newZ = target.basePosition.z;
+
+        targets.forEach(otherTarget => {
             if (otherTarget !== target && !otherTarget.hit) {
-              const dx = newX - otherTarget.mesh.position.x;
-              const dz = newZ - otherTarget.mesh.position.z;
-              const distance = Math.sqrt(dx * dx + dz * dz);
-              if (distance < MIN_DISTANCE) {
-                const pushFactor = (MIN_DISTANCE - distance) / MIN_DISTANCE;
-                newX += dx * pushFactor * 0.1;
-                newZ += dz * pushFactor * 0.1;
-              }
+                const dx = newX - otherTarget.mesh.position.x;
+                const dy = newY - otherTarget.mesh.position.y;
+                const dz = newZ - otherTarget.mesh.position.z;
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (distance < MIN_DISTANCE) {
+                    const pushFactor = (MIN_DISTANCE - distance) / MIN_DISTANCE;
+                    newX += dx * pushFactor * 0.1;
+                    newY += dy * pushFactor * 0.1;
+                    newZ += dz * pushFactor * 0.1;
+                }
             }
-          });
-          const rangeWidth = 60;
-          const rangeDepth = -20;
-          newX = THREE.MathUtils.clamp(newX, -rangeWidth / 2, rangeWidth / 2);
-          newZ = THREE.MathUtils.clamp(newZ, -60, rangeDepth);
-          target.mesh.position.set(newX, target.basePosition.y, newZ);
-          target.overlay.position.copy(target.mesh.position); // Sync overlay position
-          target.mesh.rotation.y += target.rotationSpeed;
-          target.mesh.lookAt(camera.position);
-        }
-      });
+        });
+
+        newX = THREE.MathUtils.clamp(newX, -70, 70);
+        newY = THREE.MathUtils.clamp(newY, 0, 0);
+        newZ = THREE.MathUtils.clamp(newZ, -90, -10);
+
+        target.mesh.position.set(newX, newY, newZ);
+        target.overlay.position.copy(target.mesh.position);
+        
+        // Maintain upright orientation while allowing slight rotation
+        target.mesh.rotation.x = 0;  // Keep upright
+        target.mesh.rotation.z = 0;  // Keep upright
+        target.mesh.rotation.y += target.rotationSpeed;  // Allow horizontal rotation
+        
+        // Optional: Make target face camera continuously
+        const cameraDirection = camera.position.clone().sub(target.mesh.position).normalize();
+        target.mesh.lookAt(target.mesh.position.clone().add(cameraDirection));
+        target.mesh.rotateX(-Math.PI / 2);  // Adjust if model is oriented incorrectly
+    }
+});
 
       renderer.render(scene, camera);
     }

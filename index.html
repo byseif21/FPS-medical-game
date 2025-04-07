@@ -12,6 +12,7 @@
     #gameOver { display: none; }
     button { background-color: #4CAF50; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 10px 2px; cursor: pointer; border-radius: 5px; }
     .hitmarker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 24px; pointer-events: none; opacity: 1; transition: opacity 0.3s; z-index: 3; }
+    #nameInput { margin: 10px; padding: 5px; font-size: 16px; width: 200px; }
   </style>
 </head>
 
@@ -21,11 +22,17 @@
   <div id="crosshair">+</div>
   <div id="gameOver">
     <h2>اكتمل العلاج!</h2>
-    <p>النتيجة النهائية: <span id="finalScore">0</span></p>
-    <p>لقد نجحت في توضيح توصيل الأدوية المستهدفة!</p><button id="restartButton">حاول مرة أخرى</button>
+    <p>نتيجة المرحلة الأولى: <span id="phase1Score">0</span></p>
+    <p>نتيجة المرحلة الثانية: <span id="phase2Score">0</span></p>
+    <p>النتيجة الكلية لـ <span id="doctorNameDisplay"></span>: <span id="finalScore">0</span></p>
+    <p>لقد نجحت في توضيح توصيل الأدوية المستهدفة!</p>
+    <button id="restartButton">حاول مرة أخرى</button>
+    <button id="viewResultsButton">عرض النتائج المحفوظة</button>
   </div>
   <div id="instructions">
     <h2>محاكاة الاستهداف الطبي</h2>
+    <p>أدخل اسم الدكتور:</p>
+    <input type="text" id="nameInput" placeholder="اسم الدكتور">
     <p>تعلم كيف تستهدف الأدوية الخلايا المريضة:</p>
     <p><strong>المرحلة 1:</strong> توزيع منتشر (أقل دقة)</p>
     <p><strong>المرحلة 2:</strong> استهداف دقيق (دقيق)</p>
@@ -38,6 +45,40 @@
   <script src="assets/libs/MTLLoader.js"></script>
   <script src="assets/libs/OBJLoader.js"></script>
   <script>
+    // Hybrid save function
+    function saveScore(results) {
+      if (typeof require === 'function' && require('electron')) {
+        const fs = require('fs');
+        const filePath = 'game_results.json';
+        let existingData = [];
+        try {
+          if (fs.existsSync(filePath)) {
+            existingData = JSON.parse(fs.readFileSync(filePath));
+          }
+          existingData.push(results);
+          fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
+        } catch (error) {
+          console.error('Error saving to file:', error);
+        }
+      } else {
+        let existingData = JSON.parse(localStorage.getItem('gameResults') || '[]');
+        existingData.push(results);
+        localStorage.setItem('gameResults', JSON.stringify(existingData));
+      }
+    }
+
+    function saveScoreToFile() {
+      const results = {
+        doctorName: doctorName,
+        phase1Score: phase1Score,
+        phase2Score: phase2Score,
+        totalScore: score,
+        date: new Date().toISOString()
+      };
+      saveScore(results);
+      console.log('Results saved:', results);
+    }
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -53,12 +94,19 @@
     const weaponNameElement = document.getElementById('weaponName');
     const gameOverScreen = document.getElementById('gameOver');
     const finalScoreElement = document.getElementById('finalScore');
+    const phase1ScoreElement = document.getElementById('phase1Score');
+    const phase2ScoreElement = document.getElementById('phase2Score');
+    const doctorNameDisplay = document.getElementById('doctorNameDisplay');
     const restartButton = document.getElementById('restartButton');
+    const viewResultsButton = document.getElementById('viewResultsButton');
     const instructionsScreen = document.getElementById('instructions');
     const startButton = document.getElementById('startButton');
+    const nameInput = document.getElementById('nameInput');
     const crosshair = document.getElementById('crosshair');
 
     let score = 0;
+    let phase1Score = 0;
+    let phase2Score = 0;
     let wave = 1;
     let targets = [];
     let isGameRunning = false;
@@ -73,6 +121,7 @@
     const MIN_ROTATION_X = -Math.PI / 3;
     const MAX_ROTATION_Y = Math.PI / 2;
     const MIN_ROTATION_Y = -Math.PI / 2;
+    let doctorName = '';
 
     let raycaster = new THREE.Raycaster();
     let mouse = new THREE.Vector2();
@@ -85,7 +134,7 @@
       const skyboxGeometry = new THREE.SphereGeometry(500, 32, 32);
       const skyboxMaterial = new THREE.ShaderMaterial({
         vertexShader: `varying vec3 vWorldPosition; void main() { vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-        fragmentShader: `varying vec3 vWorldPosition; void main() { vec3 color = mix(vec3(0.53, 0.81, 0.92), vec3(0.0, 0.2, 0.4), vWorldPosition.y / 500.0); gl_FragColor = vec4(color, 1.0); }`,
+        fragmentShader: `varying vec3 vWorldPosition; void main() { vec3 color = mix(vec3(0.53, 0.81, 0.92), vec3(0.0, 0.2, 0.4), vWorldPosition.y / 500.0); gl_FragColor = vec4(color, 1.0); }`, // Fixed typo here
         side: THREE.BackSide
       });
       const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
@@ -196,35 +245,32 @@
             }
           });
 
-          // Fixed tree at far left front
           const leftTree = treeObject.clone();
-          leftTree.position.set(-terrainSize/2 + 20, 100, -20);
+          leftTree.position.set(-terrainSize / 2 + 20, 100, -20);
           const leftRay = new THREE.Raycaster(new THREE.Vector3(leftTree.position.x, 100, leftTree.position.z), new THREE.Vector3(0, -1, 0));
           const leftIntersects = leftRay.intersectObject(terrain);
           leftTree.position.y = leftIntersects.length > 0 ? leftIntersects[0].point.y : -5;
           leftTree.scale.set(1.2, 1.2, 1.2);
-          leftTree.rotation.y = Math.PI/4;
+          leftTree.rotation.y = Math.PI / 4;
           scene.add(leftTree);
 
-          // Fixed tree at far right front
           const rightTree = treeObject.clone();
-          rightTree.position.set(terrainSize/2 - 20, 100, -20);
+          rightTree.position.set(terrainSize / 2 - 20, 100, -20);
           const rightRay = new THREE.Raycaster(new THREE.Vector3(rightTree.position.x, 100, rightTree.position.z), new THREE.Vector3(0, -1, 0));
           const rightIntersects = rightRay.intersectObject(terrain);
           rightTree.position.y = rightIntersects.length > 0 ? rightIntersects[0].point.y : -5;
           rightTree.scale.set(1.2, 1.2, 1.2);
-          rightTree.rotation.y = -Math.PI/4;
+          rightTree.rotation.y = -Math.PI / 4;
           scene.add(rightTree);
 
-          // Remaining trees with center exclusion
           for (let i = 0; i < treeCount - 2; i++) {
             const tree = treeObject.clone();
             let x, z;
             do {
-              x = -terrainSize/2 + Math.random() * terrainSize;
-              z = -terrainSize/2 + Math.random() * terrainSize;
+              x = -terrainSize / 2 + Math.random() * terrainSize;
+              z = -terrainSize / 2 + Math.random() * terrainSize;
             } while (Math.abs(x) < 30 && z > -40);
-            
+
             tree.position.set(x, 100, z);
             const ray = new THREE.Raycaster(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
             const intersects = ray.intersectObject(terrain);
@@ -422,34 +468,78 @@
                 }
               });
 
-              const scatteredWeapon = new THREE.Group();
-              const precisionWeapon = new THREE.Group();
+              const handMtlLoader = new THREE.MTLLoader();
+              handMtlLoader.setPath('assets/models/hand2/');
+              handMtlLoader.load('Rigged Hand.mtl', (handMaterials) => {
+                handMaterials.preload();
+                const handDiffuseMap = textureLoader.load('assets/models/hand2/textures/HAND_C.jpg');
+                const handNormalMap = textureLoader.load('assets/models/hand2/textures/HAND_N.jpg');
+                const handSpecularMap = textureLoader.load('assets/models/hand2/textures/HAND_S.jpg');
 
-              const handGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
-              const handMaterial = new THREE.MeshPhongMaterial({ color: 0xFFDAB9 });
-              const hand = new THREE.Mesh(handGeometry, handMaterial);
-              hand.position.set(0.5, -0.8, -0.5);
-              hand.rotation.set(0, 0, Math.PI / 4);
+                const handObjLoader = new THREE.OBJLoader();
+                handObjLoader.setMaterials(handMaterials);
+                handObjLoader.setPath('assets/models/hand2/');
+                handObjLoader.load('Rigged Hand.obj', (handObject) => {
+                  handObject.traverse((child) => {
+                    if (child.isMesh) {
+                      child.material = new THREE.MeshPhongMaterial({
+                        map: handDiffuseMap,
+                        normalMap: handNormalMap,
+                        specularMap: handSpecularMap,
+                        color: 0xFFDAB9,
+                        specular: 0x111111,
+                        shininess: 30
+                      });
+                      child.castShadow = true;
+                    }
+                  });
 
-              const scatteredModel = shotgunObject.clone();
-              scatteredModel.scale.set(0.12, 0.12, 0.12);
-              scatteredModel.position.set(0.5, -0.6, -1.2);
-              scatteredModel.rotation.set(0, -Math.PI / 2, 0);
-              scatteredWeapon.add(scatteredModel);
-              scatteredWeapon.add(hand.clone());
+                  const scatteredWeapon = new THREE.Group();
+                  const precisionWeapon = new THREE.Group();
 
-              const precisionModel = sniperObject;
-              precisionModel.scale.set(0.03, 0.03, 0.03);
-              precisionModel.position.set(0.5, -0.5, -1.2);
-              precisionModel.rotation.set(0, Math.PI, 0);
-              precisionWeapon.add(precisionModel);
-              precisionWeapon.add(hand.clone());
+                  const scatteredModel = shotgunObject.clone();
+                  scatteredModel.scale.set(0.14, 0.14, 0.14);
+                  scatteredModel.position.set(0.5, -0.6, -1.2);
+                  scatteredModel.rotation.set(0, -Math.PI / 2, 0);
+                  scatteredWeapon.add(scatteredModel);
 
-              precisionWeapon.visible = false;
-              camera.add(scatteredWeapon);
-              camera.add(precisionWeapon);
+                  const scatteredHand = handObject.clone();
+                  scatteredHand.scale.set(36.28, 36.28, 36.28);
+                  scatteredHand.position.set(-23.37, -37.20, 28.00);
+                  scatteredHand.rotation.set(-0.99, -3.37, 1.07);
+                  scatteredWeapon.add(scatteredHand);
 
-              callback({ scatteredWeapon, precisionWeapon });
+                  const scatteredHand2 = handObject.clone();
+                  scatteredHand2.scale.set(4.93, 4.93, 4.93);
+                  scatteredHand2.position.set(-4.23, 0.85, 4.40);
+                  scatteredHand2.rotation.set(-9.31, 8.45, -5.48);
+                  scatteredWeapon.add(scatteredHand2);
+
+                  const precisionModel = sniperObject;
+                  precisionModel.scale.set(0.03, 0.03, 0.03);
+                  precisionModel.position.set(0.5, -0.5, -1.2);
+                  precisionModel.rotation.set(0, Math.PI, 0);
+                  precisionWeapon.add(precisionModel);
+
+                  const precisionHand = handObject.clone();
+                  precisionHand.scale.set(22.32, 22.32, 22.32);
+                  precisionHand.position.set(1.70, 4.50, 26.75);
+                  precisionHand.rotation.set(1.61, 5.43, 10.27);
+                  precisionWeapon.add(precisionHand);
+
+                  const precisionHand2 = handObject.clone();
+                  precisionHand2.scale.set(4.18, 4.18, 4.18);
+                  precisionHand2.position.set(4.45, 2.25, 3.20);
+                  precisionHand2.rotation.set(-10.41, -5.45, 7.72);
+                  precisionWeapon.add(precisionHand2);
+
+                  precisionWeapon.visible = false;
+                  camera.add(scatteredWeapon);
+                  camera.add(precisionWeapon);
+
+                  callback({ scatteredWeapon, precisionWeapon });
+                });
+              });
             });
           });
         });
@@ -571,7 +661,10 @@
       if (!hitTarget || hitTarget.hit) return;
       hitTarget.hit = true;
       if (!hitTarget.isGoodTarget) {
-        score += isSniper ? 200 : 100;
+        const points = isSniper ? 200 : 100;
+        score += points;
+        if (wave === 1) phase1Score += points;
+        else phase2Score += points;
         scoreElement.textContent = score;
         let opacity = 0.9;
         const fadeInterval = setInterval(() => {
@@ -602,7 +695,10 @@
           }
         }
       } else {
-        score = Math.max(0, score - (isSniper ? 100 : 50));
+        const penalty = isSniper ? 100 : 50;
+        score = Math.max(0, score - penalty);
+        if (wave === 1) phase1Score = Math.max(0, phase1Score - penalty);
+        else phase2Score = Math.max(0, phase2Score - penalty);
         scoreElement.textContent = score;
         let originalColor;
         hitTarget.mesh.traverse((child) => {
@@ -663,7 +759,10 @@
 
     function startGame() {
       if (!weapons) return;
+      doctorName = nameInput.value.trim() || "دكتور مجهول";
       score = 0;
+      phase1Score = 0;
+      phase2Score = 0;
       wave = 1;
       isSniper = false;
       scoreElement.textContent = score;
@@ -683,9 +782,102 @@
 
     function endGame() {
       isGameRunning = false;
+      phase1ScoreElement.textContent = phase1Score;
+      phase2ScoreElement.textContent = phase2Score;
       finalScoreElement.textContent = score;
+      doctorNameDisplay.textContent = doctorName;
       gameOverScreen.style.display = 'block';
       document.exitPointerLock();
+      saveScoreToFile();
+    }
+
+    function viewSavedResults() {
+      if (typeof require === 'function' && require('electron')) {
+        const fs = require('fs');
+        const filePath = 'game_results.json';
+        try {
+          if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, 'utf8');
+            alert('النتائج المحفوظة في الملف:\n' + data);
+          } else {
+            alert('لا توجد نتائج محفوظة في الملف بعد.');
+          }
+        } catch (error) {
+          console.error('Error reading file:', error);
+          alert('حدث خطأ أثناء قراءة الملف.');
+        }
+      } else {
+        const savedData = localStorage.getItem('gameResults');
+        if (savedData) {
+          alert('النتائج المحفوظة في المتصفح:\n' + savedData);
+        } else {
+          alert('لا توجد نتائج محفوظة في المتصفح بعد.');
+        }
+      }
+    }
+
+    function addPositioningHelpers() {
+      document.addEventListener('keydown', (event) => {
+        if (!weapons) return;
+
+        const currentWeapon = isSniper ? weapons.precisionWeapon : weapons.scatteredWeapon;
+        const hand1 = currentWeapon.children[1];
+        const hand2 = currentWeapon.children[2];
+
+        const targetHand = event.shiftKey ? hand2 : hand1;
+
+        const adjustAmount = 0.05;
+
+        switch(event.key) {
+          case 'ArrowLeft': 
+            targetHand.position.x -= adjustAmount; 
+            break;
+          case 'ArrowRight': 
+            targetHand.position.x += adjustAmount; 
+            break;
+          case 'ArrowUp': 
+            targetHand.position.y += adjustAmount; 
+            break;
+          case 'ArrowDown': 
+            targetHand.position.y -= adjustAmount; 
+            break;
+          case 'a': 
+            targetHand.position.z -= adjustAmount; 
+            break;
+          case 'd': 
+            targetHand.position.z += adjustAmount; 
+            break;
+          case 'q': 
+            targetHand.rotation.x -= 0.1; 
+            break;
+          case 'e': 
+            targetHand.rotation.x += 0.1; 
+            break;
+          case 'w': 
+            targetHand.rotation.y += 0.1; 
+            break;
+          case 's': 
+            targetHand.rotation.y -= 0.1; 
+            break;
+          case 'z': 
+            targetHand.rotation.z -= 0.1; 
+            break;
+          case 'c': 
+            targetHand.rotation.z += 0.1; 
+            break;
+          case '+': 
+            targetHand.scale.multiplyScalar(1.1); 
+            break;
+          case '-': 
+            targetHand.scale.multiplyScalar(0.9); 
+            break;
+          case 'p':
+            console.log(`Hand position: (${targetHand.position.x.toFixed(2)}, ${targetHand.position.y.toFixed(2)}, ${targetHand.position.z.toFixed(2)})`);
+            console.log(`Hand rotation: (${targetHand.rotation.x.toFixed(2)}, ${targetHand.rotation.y.toFixed(2)}, ${targetHand.rotation.z.toFixed(2)})`);
+            console.log(`Hand scale: ${targetHand.scale.x.toFixed(2)}`);
+            break;
+        }
+      });
     }
 
     function init() {
@@ -698,6 +890,8 @@
         weapons = loadedWeapons;
         startButton.addEventListener('click', startGame);
         restartButton.addEventListener('click', startGame);
+        viewResultsButton.addEventListener('click', viewSavedResults);
+        addPositioningHelpers();
       });
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;

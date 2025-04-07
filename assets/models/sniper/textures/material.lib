@@ -11,4 +11,4 @@ newmtl sniper
 	Ns 32
 	d 1
 	Tr 0
-	norm C:\Users\Dries\Documents\Projects\multiplayergame\bakes\sniper\sniperbasenormal.png
+	norm sniper3Normal.png

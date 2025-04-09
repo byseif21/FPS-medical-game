@@ -13,9 +13,7 @@
       transform: translateX(-50%) perspective(1000px) rotateX(5deg);
       z-index: 2; 
       user-select: none; 
-      transition: transform 0.1s ease-out;
       filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
-      animation: float 3s ease-in-out infinite;
     }
     #hud { 
       position: absolute; 
@@ -49,10 +47,8 @@
       left: 40px; 
       z-index: 2; 
       user-select: none; 
-      transition: transform 0.1s ease-out;
       transform: perspective(1000px) rotateY(10deg);
       filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
-      animation: sway 4s ease-in-out infinite;
     }
     #crosshair { 
       position: absolute; 
@@ -149,20 +145,8 @@
       right: 35px; 
       z-index: 2; 
       user-select: none; 
-      transition: transform 0.1s ease-out;
       transform: perspective(1000px) rotateY(-10deg);
       filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
-      animation: float 3.5s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateX(-50%) perspective(1000px) rotateX(5deg) translateY(0); }
-      50% { transform: translateX(-50%) perspective(1000px) rotateX(5deg) translateY(-5px); }
-    }
-
-    @keyframes sway {
-      0%, 100% { transform: perspective(1000px) rotateY(10deg) translateX(0); }
-      50% { transform: perspective(1000px) rotateY(10deg) translateX(5px) translateY(-3px); }
     }
   </style>
 </head>
@@ -561,15 +545,15 @@
         
         textureLoader.load('assets/models/targets/BLEND/Targetshoot2.png', (diseasedTexture) => {
           diseasedTexture.flipY = true;
-          diseasedTexture.repeat.set(1.9, 1.9);
-          diseasedTexture.offset.set(0.17, 0.99);
+          diseasedTexture.repeat.set(1.9, 1.2);
+          diseasedTexture.offset.set(0.17, 1.1);
           diseasedTexture.wrapS = diseasedTexture.wrapT = THREE.RepeatWrapping;
           diseasedTexture.encoding = THREE.sRGBEncoding;
 
           textureLoader.load('assets/models/targets/BLEND/Targetdont2.png', (healthyTexture) => {
             healthyTexture.flipY = true;
-            healthyTexture.repeat.set(1.9, 1.9);
-            healthyTexture.offset.set(0.17, 0.99);
+            healthyTexture.repeat.set(1.9, 1.2);
+            healthyTexture.offset.set(0.17, 1.1);
             healthyTexture.wrapS = healthyTexture.wrapT = THREE.RepeatWrapping;
             healthyTexture.encoding = THREE.sRGBEncoding;
 
@@ -584,7 +568,7 @@
                 }
               });
               const diseasedCount = baseTargetCount;
-              const healthyCount = 8;
+              const healthyCount = 6;
 
               for (let i = 0; i < diseasedCount; i++) {
                 createTarget(object, i, false, diseasedTexture);
@@ -603,9 +587,15 @@
 
     function createTarget(originalObject, index, isGoodTarget, texture) {
       const targetMesh = originalObject.clone();
-      targetMesh.position.set(-60 + Math.random() * 120, 2, -80 + Math.random() * 40);
-      targetMesh.scale.set(1.7, 1.7, 1.7);
+      // Adjust position based on target type
+      const zPos = isGoodTarget ? (-80 + Math.random() * 40) : (-100 + Math.random() * 40); // Red targets farther back
+      targetMesh.position.set(-60 + Math.random() * 120, 2, zPos);
+      
+      // Different scales and slight blur effect for depth
+      const scale = isGoodTarget ? 1.7 : 1.5; 
+      targetMesh.scale.set(scale, scale, scale);
       targetMesh.rotation.set(-Math.PI / 2, 0, 0);
+      
       targetMesh.traverse((child) => {
         if (child.isMesh) {
           child.material = new THREE.MeshPhongMaterial({
@@ -618,6 +608,11 @@
             opacity: 1.0,
             side: THREE.DoubleSide
           });
+          // Add slight depth-of-field effect for red targets
+          if (!isGoodTarget) {
+            child.material.depthTest = true;
+            child.material.opacity = 0.95; // Slight transparency for distance
+          }
           child.castShadow = true;
           child.receiveShadow = true;
         }
@@ -783,11 +778,6 @@
         camera.rotation.x = newPitch;
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        const offsetX = movementX * 0.05;
-        phaseHud.style.transform = `translateX(calc(-50% + ${offsetX}px)) perspective(1000px) rotateX(5deg)`;
-        weaponImage.style.transform = `translateX(${offsetX}px) perspective(1000px) rotateY(10deg)`;
-        logo.style.transform = `translateX(${offsetX}px) perspective(1000px) rotateY(-10deg)`;
       });
 
       renderer.domElement.addEventListener('click', () => {
@@ -926,6 +916,7 @@
       if (!hitTarget || hitTarget.hit) return;
       hitTarget.hit = true;
       if (!hitTarget.isGoodTarget) {
+        // Red target hit (diseased)
         const points = isSniper ? 200 : 100;
         score += points;
         if (wave === 1) phase1Score += points;
@@ -936,6 +927,7 @@
           opacity -= 0.1;
           hitTarget.mesh.traverse((child) => {
             if (child.isMesh) child.material.opacity = opacity;
+            if (child.isMesh) child.material.color.setHex(0x00ff00);
           });
           hitTarget.mesh.scale.multiplyScalar(1.05);
           if (opacity <= 0) {
@@ -1282,9 +1274,6 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        phaseHud.style.transform = 'translateX(-50%) perspective(1000px) rotateX(5deg)';
-        weaponImage.style.transform = 'perspective(1000px) rotateY(10deg)';
-        logo.style.transform = 'perspective(1000px) rotateY(-10deg)';
       });
       renderer.render(scene, camera);
     }

@@ -160,6 +160,9 @@
       transform: perspective(1000px) rotateY(-10deg);
       filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
     }
+    #score {
+      transition: color 0.3s ease;
+    }
   </style>
 </head>
 
@@ -377,6 +380,12 @@
       sound.currentTime = 0;
       sound.play();
       mistakeSoundIndex = (mistakeSoundIndex + 1) % mistakeSounds.length;
+    }
+
+    function updateScoreDisplay() {
+      scoreElement.textContent = score;
+      scoreElement.style.color = score < 0 ? 'red' : 'white';
+      scoreElement.style.transition = 'color 0.3s ease';
     }
 
     function createShootingRange() {
@@ -1007,10 +1016,10 @@
         }
       } else {
         const penalty = isSniper ? 100 : 50;
-        score = Math.max(0, score - penalty);
-        if (wave === 1) phase1Score = Math.max(0, phase1Score - penalty);
-        else phase2Score = Math.max(0, phase2Score - penalty);
-        scoreElement.textContent = score;
+        score -= penalty;
+        if (wave === 1) phase1Score -= penalty;
+        else phase2Score -= penalty;
+        updateScoreDisplay();
         playMistakeSound();
         let originalColor;
         hitTarget.mesh.traverse((child) => {
@@ -1080,7 +1089,7 @@
       phase2Score = 0;
       wave = 1;
       isSniper = false;
-      scoreElement.textContent = score;
+      updateScoreDisplay();
       targetsLeftElement.textContent = '5';
       weaponNameElement.textContent = "Scattered Distribution";
       weapons.scatteredWeapon.visible = true;
@@ -1121,7 +1130,7 @@
       phase2Score = 0;
       wave = 1;
       isSniper = false;
-      scoreElement.textContent = score;
+      updateScoreDisplay();
       targetsLeftElement.textContent = '0';
       weaponNameElement.textContent = "Scattered Distribution";
       weapons.scatteredWeapon.visible = true;

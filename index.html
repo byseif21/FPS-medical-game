@@ -5,20 +5,173 @@
   <style>
     body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
     #gameCanvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
-    #hud { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; z-index: 2; user-select: none; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); }
-    #weaponInfo { position: absolute; bottom: 20px; right: 20px; color: white; font-size: 20px; z-index: 2; user-select: none; text-align: right; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); }
-    #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none; }
-    #gameOver, #instructions { width: 475px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.8); color: white; padding: 15px; border-radius: 10px; text-align: center; z-index: 4; max-width: 80%; }
+    #phaseHud { 
+      width: 500px; 
+      position: absolute; 
+      top: -10px; 
+      left: 50%; 
+      transform: translateX(-50%) perspective(1000px) rotateX(5deg);
+      z-index: 2; 
+      user-select: none; 
+      transition: transform 0.1s ease-out;
+      filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
+      animation: float 3s ease-in-out infinite;
+    }
+    #hud { 
+      position: absolute; 
+      gap: 7.2rem;
+      top: 45px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      color: white; 
+      font-size: 24px; 
+      z-index: 2; 
+      user-select: none; 
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
+      text-align: center; 
+      display: none;
+    }
+    #weaponInfo { 
+      position: absolute; 
+      bottom: 20px; 
+      right: 20px; 
+      color: white; 
+      font-size: 20px; 
+      z-index: 2; 
+      user-select: none; 
+      text-align: right; 
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
+    }
+    #weaponImage { 
+      width: 370px; 
+      position: absolute; 
+      bottom: 25px; 
+      left: 40px; 
+      z-index: 2; 
+      user-select: none; 
+      transition: transform 0.1s ease-out;
+      transform: perspective(1000px) rotateY(10deg);
+      filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
+      animation: sway 4s ease-in-out infinite;
+    }
+    #crosshair { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      z-index: 2; 
+      pointer-events: none; 
+    }
+    #gameOver, #instructions, #topScoresModal { 
+      width: 475px; 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      background-color: rgba(0, 0, 0, 0.8); 
+      color: white; 
+      padding: 15px; 
+      border-radius: 10px; 
+      text-align: center; 
+      z-index: 4; 
+      max-width: 80%; 
+    }
     #gameOver { display: none; }
-    button { background-color: #4CAF50; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 10px 2px; cursor: pointer; border-radius: 5px; }
-    .hitmarker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 24px; pointer-events: none; opacity: 1; transition: opacity 0.3s; z-index: 3; }
+    #topScoresModal { display: none; }
+    #phaseIntro {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 20px;
+      font-size: 28px;
+      text-align: center;
+      z-index: 5;
+      border-radius: 8px;
+      display: none;
+      user-select: none;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+    button { 
+      background-color: #4CAF50; 
+      border: none; 
+      color: white; 
+      padding: 10px 20px; 
+      text-align: center; 
+      text-decoration: none; 
+      display: inline-block; 
+      font-size: 16px; 
+      margin: 10px 2px; 
+      cursor: pointer; 
+      border-radius: 5px; 
+    }
+    button:hover { background-color: #45a049; }
+    .gold-button { 
+      background-color: #FFD700; 
+      color: black; 
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); 
+    }
+    .gold-button:hover { background-color: #E6C200; }
+    .hitmarker { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      color: white; 
+      font-size: 24px; 
+      pointer-events: none; 
+      opacity: 1; 
+      transition: opacity 0.3s; 
+      z-index: 3; 
+    }
     #nameInput { margin: 10px; padding: 5px; font-size: 16px; width: 200px; }
+    #topScoresList { list-style: none; padding: 0; margin: 10px 0; }
+    #topScoresList li { padding: 8px; font-size: 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+    #topScoresList li:nth-child(1) { color: #FFD700; font-weight: bold; }
+    #topScoresList li:nth-child(2) { color: #C0C0C0; }
+    #topScoresList li:nth-child(3) { color: #CD7F32; }
+    #muteButton { 
+      position: absolute; 
+      top: 20px; 
+      left: 20px; 
+      z-index: 3; 
+      background-color: #f44336; 
+    }
+    #muteButton.muted { 
+      background-color: #4CAF50; 
+    }
+    #logo { 
+      width: 110px; 
+      position: absolute; 
+      top: 15px; 
+      right: 35px; 
+      z-index: 2; 
+      user-select: none; 
+      transition: transform 0.1s ease-out;
+      transform: perspective(1000px) rotateY(-10deg);
+      filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
+      animation: float 3.5s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) perspective(1000px) rotateX(5deg) translateY(0); }
+      50% { transform: translateX(-50%) perspective(1000px) rotateX(5deg) translateY(-5px); }
+    }
+
+    @keyframes sway {
+      0%, 100% { transform: perspective(1000px) rotateY(10deg) translateX(0); }
+      50% { transform: perspective(1000px) rotateY(10deg) translateX(5px) translateY(-3px); }
+    }
   </style>
 </head>
 
 <body>
-  <div id="hud">Successful Treatments: <span id="score">0</span><br>Phase: <span id="wave">1</span><br>Remaining Diseased Cells: <span id="targetsLeft">0</span></div>
+  <img id="phaseHud" src="assets/ui/phase-1-score.png" alt="Phase HUD" style="display: none;">
+  <div id="hud"> <span id="score">0</span><br> <span id="targetsLeft">0</span></div>
   <div id="weaponInfo">Medicine: <span id="weaponName">Scattered Distribution</span></div>
+  <img id="weaponImage" src="assets/ui/Phase-1-weapon.png" alt="Weapon Icon" style="display: none;">
   <div id="crosshair">+</div>
   <div id="gameOver">
     <h2>Treatment Completed!</h2>
@@ -27,7 +180,9 @@
     <p>Total Score for <span id="doctorNameDisplay"></span>: <span id="finalScore">0</span></p>
     <p>You successfully demonstrated targeted medicine delivery!</p>
     <button id="restartButton">Try Again</button>
+    <button id="newNameButton">Start With New Name</button>
     <button id="viewResultsButton">View Saved Results</button>
+    <button id="viewTopScoresButton" class="gold-button">View Top Scores</button>
   </div>
   <div id="instructions">
     <h2>Medical Targeting Simulation</h2>
@@ -38,14 +193,29 @@
     <p><strong>Phase 2:</strong> Precision Targeting (accurate)</p>
     <p>Use the mouse to aim and left-click to administer treatment.</p>
     <p>Red Targets = Diseased Cells (treat them!)</p>
-    <p>Green Targets = Healthy Cells (avoid them!)</p><button id="startButton">Start Treatment</button>
+    <p>Green Targets = Healthy Cells (avoid them!)</p>
+    <button id="startButton">Start Treatment</button>
+    <button id="viewTopScoresStartButton" class="gold-button">View Top Scores</button>
   </div>
+  <div id="topScoresModal">
+    <h2>Top Scores</h2>
+    <ul id="topScoresList"></ul>
+    <button id="closeTopScoresButton">Close</button>
+  </div>
+  <div id="phaseIntro"></div>
+  <button id="muteButton">Mute</button>
+  <img id="logo" src="assets/ui/logo.png" alt="Game Logo" style="display: none;">
+
+  <audio id="shotgunSound" src="assets/sounds/shotgun.mp3" preload="auto"></audio>
+  <audio id="sniperSound" src="assets/sounds/sniper.mp3" preload="auto"></audio>
+  <audio id="clickSound" src="assets/sounds/arcade.mp3" preload="auto"></audio>
+  <audio id="mistakeSound" src="assets/sounds/mistake.wav" preload="auto"></audio>
+  <audio id="backgroundMusic" src="assets/sounds/game-music.mp3" preload="auto" loop></audio>
 
   <script src="assets/libs/three.min.js"></script>
   <script src="assets/libs/MTLLoader.js"></script>
   <script src="assets/libs/OBJLoader.js"></script>
   <script>
-    // Hybrid save function
     function saveScore(results) {
       if (typeof require === 'function' && require('electron')) {
         const fs = require('fs');
@@ -88,21 +258,34 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(renderer.domElement);
 
+    const phaseHud = document.getElementById('phaseHud');
+    const hud = document.getElementById('hud');
     const scoreElement = document.getElementById('score');
-    const waveElement = document.getElementById('wave');
     const targetsLeftElement = document.getElementById('targetsLeft');
     const weaponNameElement = document.getElementById('weaponName');
+    const weaponImage = document.getElementById('weaponImage');
     const gameOverScreen = document.getElementById('gameOver');
     const finalScoreElement = document.getElementById('finalScore');
     const phase1ScoreElement = document.getElementById('phase1Score');
     const phase2ScoreElement = document.getElementById('phase2Score');
     const doctorNameDisplay = document.getElementById('doctorNameDisplay');
     const restartButton = document.getElementById('restartButton');
+    const newNameButton = document.getElementById('newNameButton');
     const viewResultsButton = document.getElementById('viewResultsButton');
+    const viewTopScoresButton = document.getElementById('viewTopScoresButton');
     const instructionsScreen = document.getElementById('instructions');
     const startButton = document.getElementById('startButton');
+    const viewTopScoresStartButton = document.getElementById('viewTopScoresStartButton');
     const nameInput = document.getElementById('nameInput');
     const crosshair = document.getElementById('crosshair');
+    const topScoresModal = document.getElementById('topScoresModal');
+    const topScoresList = document.getElementById('topScoresList');
+    const closeTopScoresButton = document.getElementById('closeTopScoresButton');
+    const muteButton = document.getElementById('muteButton');
+    const phaseIntro = document.getElementById('phaseIntro');
+    const logo = document.getElementById('logo');
+
+    const backgroundMusic = document.getElementById('backgroundMusic');
 
     let score = 0;
     let phase1Score = 0;
@@ -112,16 +295,20 @@
     let isGameRunning = false;
     let isSniper = false;
     let weapons = null;
+    let sponsorBillboard = null;
     let lastShotTime = 0;
     let reloadTime = 200;
-    const baseTargetCount = 3;
+    const baseTargetCount = 5;
     const MIN_DISTANCE = 8;
     const MOUSE_SENSITIVITY = 0.002;
-    const MAX_ROTATION_X = Math.PI / 3;
-    const MIN_ROTATION_X = -Math.PI / 3;
-    const MAX_ROTATION_Y = Math.PI / 2;
-    const MIN_ROTATION_Y = -Math.PI / 2;
+    const MAX_ROTATION_X = Math.PI / 3;  
+    const MIN_ROTATION_X = -Math.PI / 3; 
+    const MAX_ROTATION_Y = Math.PI / 3;  
+    const MIN_ROTATION_Y = -Math.PI / 3; 
     let doctorName = '';
+    let isMuted = false;
+    let wasGameOverVisible = false;
+    let wasInstructionsVisible = false;
 
     let raycaster = new THREE.Raycaster();
     let mouse = new THREE.Vector2();
@@ -130,11 +317,75 @@
     const FRAME_TIME = 1000 / TARGET_FPS;
     let lastFrameTime = 0;
 
+    const shotgunSounds = [
+      document.getElementById('shotgunSound'),
+      new Audio('assets/sounds/shotgun.mp3'),
+      new Audio('assets/sounds/shotgun.mp3')
+    ];
+    const sniperSounds = [
+      document.getElementById('sniperSound'),
+      new Audio('assets/sounds/sniper.mp3'),
+      new Audio('assets/sounds/sniper.mp3')
+    ];
+    const clickSounds = [
+      document.getElementById('clickSound'),
+      new Audio('assets/sounds/arcade.mp3'),
+      new Audio('assets/sounds/arcade.mp3')
+    ];
+    const mistakeSounds = [
+      document.getElementById('mistakeSound'),
+      new Audio('assets/sounds/mistake.wav'),
+      new Audio('assets/sounds/mistake.wav')
+    ];
+    let shotgunSoundIndex = 0;
+    let sniperSoundIndex = 0;
+    let clickSoundIndex = 0;
+    let mistakeSoundIndex = 0;
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      muteButton.textContent = isMuted ? 'Unmute' : 'Mute';
+      muteButton.classList.toggle('muted', !isMuted);
+      if (isMuted) {
+        backgroundMusic.pause();
+      } else {
+        if (isGameRunning) backgroundMusic.play();
+      }
+    }
+
+    function playShotgunSound() {
+      const sound = shotgunSounds[shotgunSoundIndex];
+      sound.currentTime = 0;
+      sound.play();
+      shotgunSoundIndex = (shotgunSoundIndex + 1) % shotgunSounds.length;
+    }
+
+    function playSniperSound() {
+      const sound = sniperSounds[sniperSoundIndex];
+      sound.currentTime = 0;
+      sound.play();
+      sniperSoundIndex = (sniperSoundIndex + 1) % sniperSounds.length;
+    }
+
+    function playClickSound() {
+      const sound = clickSounds[clickSoundIndex];
+      sound.currentTime = 0;
+      sound.play();
+      clickSoundIndex = (clickSoundIndex + 1) % clickSounds.length;
+    }
+
+    function playMistakeSound() {
+      const sound = mistakeSounds[mistakeSoundIndex];
+      sound.currentTime = 0;
+      sound.play();
+      mistakeSoundIndex = (mistakeSoundIndex + 1) % mistakeSounds.length;
+    }
+
     function createShootingRange() {
       const skyboxGeometry = new THREE.SphereGeometry(500, 32, 32);
       const skyboxMaterial = new THREE.ShaderMaterial({
         vertexShader: `varying vec3 vWorldPosition; void main() { vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-        fragmentShader: `varying vec3 vWorldPosition; void main() { vec3 color = mix(vec3(0.53, 0.81, 0.92), vec3(0.0, 0.2, 0.4), vWorldPosition.y / 500.0); gl_FragColor = vec4(color, 1.0); }`, // Fixed typo here
+        fragmentShader: `varying vec3 vWorldPosition; void main() { vec3 color = mix(vec3(0.68, 0.90, 0.97), vec3(0.15, 0.35, 0.55), vWorldPosition.y / 500.0); gl_FragColor = vec4(color, 1.0); }`,
         side: THREE.BackSide
       });
       const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterial);
@@ -156,14 +407,14 @@
         texture.repeat.set(1, 1);
         terrainMaterial.map = texture;
         terrainMaterial.needsUpdate = true;
-      });
+      }, undefined, (err) => console.error('Error loading diffuse texture:', err));
 
       textureLoader.load(texturePath + 'rocky_terrain_02_rough_4k.exr', (texture) => {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
         texture.repeat.set(1, 1);
         terrainMaterial.roughnessMap = texture;
         terrainMaterial.needsUpdate = true;
-      });
+      }, undefined, (err) => console.error('Error loading roughness texture:', err));
 
       textureLoader.load(texturePath + 'rocky_terrain_02_disp_4k.png', (texture) => {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -215,7 +466,7 @@
         mountainVertices[i + 2] = z * scale;
       }
       mountainGeometry.computeVertexNormals();
-      const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0x8B5A2B, shininess: 10, flatShading: false });
+      const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0xAB7A4B, shininess: 12, flatShading: false });
       for (let i = 0; i < 3; i++) {
         const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
         mountain.position.set(-50 + i * 50, -5, -300);
@@ -227,65 +478,6 @@
         const intersects = ray.intersectObject(terrain);
         if (intersects.length > 0) mountain.position.y = intersects[0].point.y;
       }
-
-      const treeCount = 5;
-      const mtlLoader = new THREE.MTLLoader();
-      const objLoader = new THREE.OBJLoader();
-      mtlLoader.setPath('assets/models/tree/');
-      mtlLoader.setResourcePath('assets/models/tree/');
-      mtlLoader.load('trees9.mtl', (materials) => {
-        materials.preload();
-        objLoader.setMaterials(materials);
-        objLoader.setPath('assets/models/tree/');
-        objLoader.load('trees9.obj', (treeObject) => {
-          treeObject.traverse((child) => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-
-          const leftTree = treeObject.clone();
-          leftTree.position.set(-terrainSize / 2 + 20, 100, -20);
-          const leftRay = new THREE.Raycaster(new THREE.Vector3(leftTree.position.x, 100, leftTree.position.z), new THREE.Vector3(0, -1, 0));
-          const leftIntersects = leftRay.intersectObject(terrain);
-          leftTree.position.y = leftIntersects.length > 0 ? leftIntersects[0].point.y : -5;
-          leftTree.scale.set(1.2, 1.2, 1.2);
-          leftTree.rotation.y = Math.PI / 4;
-          scene.add(leftTree);
-
-          const rightTree = treeObject.clone();
-          rightTree.position.set(terrainSize / 2 - 20, 100, -20);
-          const rightRay = new THREE.Raycaster(new THREE.Vector3(rightTree.position.x, 100, rightTree.position.z), new THREE.Vector3(0, -1, 0));
-          const rightIntersects = rightRay.intersectObject(terrain);
-          rightTree.position.y = rightIntersects.length > 0 ? rightIntersects[0].point.y : -5;
-          rightTree.scale.set(1.2, 1.2, 1.2);
-          rightTree.rotation.y = -Math.PI / 4;
-          scene.add(rightTree);
-
-          for (let i = 0; i < treeCount - 2; i++) {
-            const tree = treeObject.clone();
-            let x, z;
-            do {
-              x = -terrainSize / 2 + Math.random() * terrainSize;
-              z = -terrainSize / 2 + Math.random() * terrainSize;
-            } while (Math.abs(x) < 30 && z > -40);
-
-            tree.position.set(x, 100, z);
-            const ray = new THREE.Raycaster(new THREE.Vector3(x, 100, z), new THREE.Vector3(0, -1, 0));
-            const intersects = ray.intersectObject(terrain);
-            if (intersects.length > 0) tree.position.y = intersects[0].point.y;
-            else tree.position.y = -5;
-            tree.scale.set(1 + Math.random() * 0.3, 1 + Math.random() * 0.3, 1 + Math.random() * 0.3);
-            tree.rotation.y = Math.random() * Math.PI * 2;
-            scene.add(tree);
-          }
-        }, undefined, (error) => {
-          console.error('Error loading tree9.obj:', error);
-        });
-      }, undefined, (error) => {
-        console.error('Error loading tree9.mtl:', error);
-      });
 
       const targetBoardGeometry = new THREE.PlaneGeometry(6, 12);
       const targetBoardMaterial = new THREE.MeshPhongMaterial({ color: 0x0000FF });
@@ -311,10 +503,24 @@
         }
       }
 
+      const sponsorGeometry = new THREE.PlaneGeometry(120, 15);
+      const sponsorTexture = textureLoader.load('assets/ui/Brands.png');
+      const sponsorMaterial = new THREE.MeshPhongMaterial({
+        map: sponsorTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+      sponsorBillboard = new THREE.Mesh(sponsorGeometry, sponsorMaterial);
+      sponsorBillboard.position.set(0, 3, -20);
+      sponsorBillboard.rotation.x = -Math.PI / 8;
+      sponsorBillboard.castShadow = true;
+      sponsorBillboard.receiveShadow = true;
+      scene.add(sponsorBillboard);
+
       const rockCount = 15;
       for (let i = 0; i < rockCount; i++) {
         const rockGeometry = new THREE.SphereGeometry(1.5 + Math.random() * 1, 8, 8);
-        const rockMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+        const rockMaterial = new THREE.MeshPhongMaterial({ color: 0xA0A0A0 });
         const rock = new THREE.Mesh(rockGeometry, rockMaterial);
         const x = -terrainSize / 2 + Math.random() * terrainSize;
         const z = -terrainSize / 2 + Math.random() * terrainSize;
@@ -328,9 +534,9 @@
         scene.add(rock);
       }
 
-      const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
+      const ambientLight = new THREE.AmbientLight(0x606060, 1.5);
       scene.add(ambientLight);
-      const sunlight = new THREE.DirectionalLight(0xFFFFFF, 1.5);
+      const sunlight = new THREE.DirectionalLight(0xFFFFFF, 2.5);
       sunlight.position.set(50, 100, 50);
       sunlight.castShadow = true;
       sunlight.shadow.mapSize.width = 1024;
@@ -344,78 +550,89 @@
       scene.add(sunlight);
     }
 
-    function createTargets() {
+    function createTargets(callback) {
+      targets.forEach(target => scene.remove(target.mesh));
       targets = [];
       const mtlLoader = new THREE.MTLLoader();
       mtlLoader.setPath('assets/models/targets/BLEND/');
       mtlLoader.load('targhet.mtl', (materials) => {
         materials.preload();
         const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('assets/models/targets/BLEND/tt4.jpg', (texture) => {
-          texture.flipY = true;
-          texture.repeat.set(2.5, 2.5);
-          texture.offset.set(0.08, 0.03);
-          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-          texture.encoding = THREE.sRGBEncoding;
-          const objLoader = new THREE.OBJLoader();
-          objLoader.setMaterials(materials);
-          objLoader.setPath('assets/models/targets/BLEND/');
-          objLoader.load('targhet.obj', (object) => {
-            object.traverse((child) => {
-              if (child.isMesh) {
-                child.material = new THREE.MeshPhongMaterial({
-                  map: texture,
-                  color: 0xffffff,
-                  specular: 0x111111,
-                  shininess: 50,
-                  transparent: false,
-                  opacity: 1.0,
-                  side: THREE.DoubleSide
-                });
-                child.castShadow = true;
-                child.receiveShadow = true;
+        
+        textureLoader.load('assets/models/targets/BLEND/Targetshoot2.png', (diseasedTexture) => {
+          diseasedTexture.flipY = true;
+          diseasedTexture.repeat.set(1.9, 1.9);
+          diseasedTexture.offset.set(0.17, 0.99);
+          diseasedTexture.wrapS = diseasedTexture.wrapT = THREE.RepeatWrapping;
+          diseasedTexture.encoding = THREE.sRGBEncoding;
+
+          textureLoader.load('assets/models/targets/BLEND/Targetdont2.png', (healthyTexture) => {
+            healthyTexture.flipY = true;
+            healthyTexture.repeat.set(1.9, 1.9);
+            healthyTexture.offset.set(0.17, 0.99);
+            healthyTexture.wrapS = healthyTexture.wrapT = THREE.RepeatWrapping;
+            healthyTexture.encoding = THREE.sRGBEncoding;
+
+            const objLoader = new THREE.OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.setPath('assets/models/targets/BLEND/');
+            objLoader.load('targhet.obj', (object) => {
+              object.traverse((child) => {
+                if (child.isMesh) {
+                  child.castShadow = true;
+                  child.receiveShadow = true;
+                }
+              });
+              const diseasedCount = baseTargetCount;
+              const healthyCount = 8;
+
+              for (let i = 0; i < diseasedCount; i++) {
+                createTarget(object, i, false, diseasedTexture);
               }
-            });
-            const spawnCount = baseTargetCount + wave * 2;
-            for (let i = 0; i < spawnCount; i++) {
-              createTarget(object, i, false);
-            }
-            for (let i = 0; i < Math.floor(spawnCount / 2); i++) {
-              createTarget(object, i + spawnCount, true);
-            }
-            targetsLeftElement.textContent = targets.filter(t => !t.isGoodTarget && !t.hit).length;
+              for (let i = 0; i < healthyCount; i++) {
+                createTarget(object, i + diseasedCount, true, healthyTexture);
+              }
+              targetsLeftElement.textContent = targets.filter(t => !t.isGoodTarget && !t.hit).length;
+              renderer.render(scene, camera);
+              if (callback) callback();
+            }, undefined, (err) => console.error('Error loading target model:', err));
+          }, undefined, (err) => console.error('Error loading healthy texture:', err));
+        }, undefined, (err) => console.error('Error loading diseased texture:', err));
+      }, undefined, (err) => console.error('Error loading target material:', err));
+    }
+
+    function createTarget(originalObject, index, isGoodTarget, texture) {
+      const targetMesh = originalObject.clone();
+      targetMesh.position.set(-60 + Math.random() * 120, 2, -80 + Math.random() * 40);
+      targetMesh.scale.set(1.7, 1.7, 1.7);
+      targetMesh.rotation.set(-Math.PI / 2, 0, 0);
+      targetMesh.traverse((child) => {
+        if (child.isMesh) {
+          child.material = new THREE.MeshPhongMaterial({
+            map: texture,
+            specular: 0x333333,
+            shininess: 30,
+            emissiveIntensity: 0.5,
+            roughness: 0.5,
+            transparent: false,
+            opacity: 1.0,
+            side: THREE.DoubleSide
           });
-        });
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
       });
+      scene.add(targetMesh);
 
-      function createTarget(originalObject, index, isGoodTarget) {
-        const targetMesh = originalObject.clone();
-        targetMesh.position.set(-60 + Math.random() * 120, 2, -80 + Math.random() * 40);
-        targetMesh.scale.set(1.7, 1.7, 1.7);
-        targetMesh.rotation.set(-Math.PI / 2, 0, 0);
-        targetMesh.traverse((child) => {
-          if (child.isMesh) {
-            child.material = child.material.clone();
-            child.material.color.setHex(isGoodTarget ? 0x006600 : 0x660000);
-            child.material.emissive.setHex(isGoodTarget ? 0x002200 : 0x220000);
-            child.material.emissiveIntensity = 0.3;
-            child.material.roughness = 0.2;
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-        scene.add(targetMesh);
-
-        targets.push({
-          mesh: targetMesh,
-          hit: false,
-          isGoodTarget: isGoodTarget,
-          basePosition: targetMesh.position.clone(),
-          phase: Math.random() * Math.PI * 2,
-          speed: 0.5 + Math.random() * 0.4,
-          moveRangeX: 15 + Math.random() * 15
-        });
-      }
+      targets.push({
+        mesh: targetMesh,
+        hit: false,
+        isGoodTarget: isGoodTarget,
+        basePosition: targetMesh.position.clone(),
+        phase: Math.random() * Math.PI * 2,
+        speed: wave === 1 ? (0.3 + Math.random() * 0.3) : (0.5 + Math.random() * 0.4),
+        moveRangeX: 15 + Math.random() * 15
+      });
     }
 
     function createWeapons(callback) {
@@ -439,8 +656,8 @@
                 map: shotgunDiffuseMap,
                 normalMap: shotgunNormalMap,
                 specularMap: shotgunSpecularMap,
-                shininess: 80,
-                specular: 0x888888
+                shininess: 100,
+                specular: 0xAAAAAA
               });
               child.castShadow = true;
             }
@@ -462,7 +679,7 @@
                     metalnessMap: textureLoader.load('assets/models/sniper/textures/sniper3Metallic.png'),
                     roughnessMap: textureLoader.load('assets/models/sniper/textures/sniper3Roughness.png'),
                     metalness: 0.7,
-                    roughness: 0.3
+                    roughness: 0.2
                   });
                   child.castShadow = true;
                 }
@@ -486,10 +703,15 @@
                         map: handDiffuseMap,
                         normalMap: handNormalMap,
                         specularMap: handSpecularMap,
-                        color: 0xFFDAB9,
-                        specular: 0x111111,
-                        shininess: 30
+                        color: 0xFFFFFF,
+                        specular: 0x555555,
+                        shininess: 50,
+                        emissive: 0x101010,
+                        emissiveIntensity: 0.3
                       });
+                      const leftLight = new THREE.PointLight(0xFFFFFF, 0.8, 10);
+                      leftLight.position.set(-2, 0, 0);
+                      child.add(leftLight);
                       child.castShadow = true;
                     }
                   });
@@ -500,18 +722,18 @@
                   const scatteredModel = shotgunObject.clone();
                   scatteredModel.scale.set(0.14, 0.14, 0.14);
                   scatteredModel.position.set(0.5, -0.6, -1.2);
-                  scatteredModel.rotation.set(0, -Math.PI / 2, 0);
+                  scatteredModel.rotation.set(-0.05, -Math.PI / 2, 0);
                   scatteredWeapon.add(scatteredModel);
 
                   const scatteredHand = handObject.clone();
                   scatteredHand.scale.set(36.28, 36.28, 36.28);
-                  scatteredHand.position.set(-23.37, -37.20, 28.00);
+                  scatteredHand.position.set(-22.62, -37.15, 28.00);
                   scatteredHand.rotation.set(-0.99, -3.37, 1.07);
                   scatteredWeapon.add(scatteredHand);
 
                   const scatteredHand2 = handObject.clone();
                   scatteredHand2.scale.set(4.93, 4.93, 4.93);
-                  scatteredHand2.position.set(-4.23, 0.85, 4.40);
+                  scatteredHand2.position.set(-4.18, 0.85, 4.40);
                   scatteredHand2.rotation.set(-9.31, 8.45, -5.48);
                   scatteredWeapon.add(scatteredHand2);
 
@@ -529,8 +751,8 @@
 
                   const precisionHand2 = handObject.clone();
                   precisionHand2.scale.set(4.18, 4.18, 4.18);
-                  precisionHand2.position.set(4.45, 2.25, 3.20);
-                  precisionHand2.rotation.set(-10.41, -5.45, 7.72);
+                  precisionHand2.position.set(5.70, 1.60, 2.70);
+                  precisionHand2.rotation.set(-10.51, -5.75, 7.72);
                   precisionWeapon.add(precisionHand2);
 
                   precisionWeapon.visible = false;
@@ -538,12 +760,13 @@
                   camera.add(precisionWeapon);
 
                   callback({ scatteredWeapon, precisionWeapon });
-                });
-              });
-            });
-          });
-        });
-      });
+                  renderer.render(scene, camera);
+                }, undefined, (err) => console.error('Error loading hand model:', err));
+              }, undefined, (err) => console.error('Error loading hand material:', err));
+            }, undefined, (err) => console.error('Error loading sniper model:', err));
+          }, undefined, (err) => console.error('Error loading sniper material:', err));
+        }, undefined, (err) => console.error('Error loading shotgun model:', err));
+      }, undefined, (err) => console.error('Error loading shotgun material:', err));
     }
 
     function setupControls() {
@@ -560,6 +783,11 @@
         camera.rotation.x = newPitch;
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        const offsetX = movementX * 0.05;
+        phaseHud.style.transform = `translateX(calc(-50% + ${offsetX}px)) perspective(1000px) rotateX(5deg)`;
+        weaponImage.style.transform = `translateX(${offsetX}px) perspective(1000px) rotateY(10deg)`;
+        logo.style.transform = `translateX(${offsetX}px) perspective(1000px) rotateY(-10deg)`;
       });
 
       renderer.domElement.addEventListener('click', () => {
@@ -571,13 +799,14 @@
         if (isSniper) {
           raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
           const intersects = raycaster.intersectObjects(targets.filter(t => !t.hit).map(t => t.mesh), true);
+          playSniperSound();
           if (intersects.length > 0) {
             const hitTarget = targets.find(t => t.mesh === intersects[0].object || t.mesh.children.includes(intersects[0].object));
             handleHit(hitTarget);
             createLaserEffect();
           }
         } else {
-          const spreadAngle = Math.PI / 25;
+          const spreadAngle = Math.PI / 15;
           const pellets = 6;
           const hitTargets = new Set();
           for (let i = 0; i < pellets; i++) {
@@ -593,6 +822,7 @@
             createPelletTrail(direction);
           }
           hitTargets.forEach(target => handleHit(target));
+          playShotgunSound();
         }
         createShotFeedback();
         addRecoilEffect();
@@ -618,19 +848,44 @@
     }
 
     function createPelletTrail(direction) {
-      const trailGeometry = new THREE.CylinderGeometry(0.1, 0.1, 15, 6);
-      const trailMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.6 });
-      const trail = new THREE.Mesh(trailGeometry, trailMaterial);
-      const startPos = new THREE.Vector3(0, 0, -5);
-      trail.position.copy(startPos);
-      trail.lookAt(direction.clone().multiplyScalar(20).add(startPos));
-      camera.add(trail);
-      let opacity = 0.6;
+      const pelletGroup = new THREE.Group();
+      const pelletCount = 8;
+      const spreadFactor = 0.2;
+
+      for (let i = 0; i < pelletCount; i++) {
+        const pelletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const pelletMaterial = new THREE.MeshBasicMaterial({
+          color: 0xcccccc,
+          transparent: true,
+          opacity: 0.7
+        });
+        const pellet = new THREE.Mesh(pelletGeometry, pelletMaterial);
+
+        const spreadX = (Math.random() - 0.5) * spreadFactor;
+        const spreadY = (Math.random() - 0.5) * spreadFactor;
+        const startPos = new THREE.Vector3(spreadX, spreadY, -2);
+        pellet.position.copy(startPos);
+
+        const pelletDirection = direction.clone().add(new THREE.Vector3(spreadX, spreadY, 0).multiplyScalar(0.1));
+        pellet.lookAt(pelletDirection.clone().multiplyScalar(20).add(startPos));
+
+        pelletGroup.add(pellet);
+      }
+
+      camera.add(pelletGroup);
+
+      let opacity = 0.7;
+      let distance = 0;
+      const speed = 0.5;
       const fadeInterval = setInterval(() => {
-        opacity -= 0.1;
-        trailMaterial.opacity = opacity;
-        if (opacity <= 0) {
-          camera.remove(trail);
+        opacity -= 0.05;
+        distance += speed;
+        pelletGroup.children.forEach(pellet => {
+          pellet.material.opacity = opacity;
+          pellet.position.z -= speed;
+        });
+        if (opacity <= 0 || distance >= 15) {
+          camera.remove(pelletGroup);
           clearInterval(fadeInterval);
         }
       }, 25);
@@ -655,6 +910,16 @@
       const recoilAmount = isSniper ? 0.05 : 0.1;
       currentWeapon.position.z += recoilAmount;
       setTimeout(() => currentWeapon.position.copy(originalPosition), 100);
+    }
+
+    function showPhaseIntro(phaseText, callback) {
+      phaseIntro.textContent = phaseText;
+      phaseIntro.style.display = 'block';
+      callback(() => {
+        setTimeout(() => {
+          phaseIntro.style.display = 'none';
+        }, 1500);
+      });
     }
 
     function handleHit(hitTarget) {
@@ -682,14 +947,21 @@
         targetsLeftElement.textContent = remainingBadTargets;
         if (remainingBadTargets === 0) {
           if (wave === 1) {
+            isGameRunning = false;
             wave = 2;
             isSniper = true;
-            waveElement.textContent = wave;
             weaponNameElement.textContent = "Precision Targeting";
             weapons.scatteredWeapon.visible = false;
             weapons.precisionWeapon.visible = true;
             crosshair.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2" fill="red"/><line x1="16" y1="6" x2="16" y2="12" stroke="red" stroke-width="1"/><line x1="16" y1="20" x2="16" y2="26" stroke="red" stroke-width="1"/><line x1="6" y1="16" x2="12" y2="16" stroke="red" stroke-width="1"/><line x1="20" y1="16" x2="26" y2="16" stroke="red" stroke-width="1"/></svg>`;
-            createTargets();
+            phaseHud.src = "assets/ui/phase-2-score.png";
+            weaponImage.src = "assets/ui/Phase-2-weapon.png";
+            showPhaseIntro("Phase 2: Precision Targeting", (done) => {
+              createTargets(() => {
+                done();
+                isGameRunning = true;
+              });
+            });
           } else {
             endGame();
           }
@@ -700,6 +972,7 @@
         if (wave === 1) phase1Score = Math.max(0, phase1Score - penalty);
         else phase2Score = Math.max(0, phase2Score - penalty);
         scoreElement.textContent = score;
+        playMistakeSound();
         let originalColor;
         hitTarget.mesh.traverse((child) => {
           if (child.isMesh) originalColor = child.material.color.getHex();
@@ -758,7 +1031,10 @@
     }
 
     function startGame() {
-      if (!weapons) return;
+      if (!weapons) {
+        console.error('Weapons not loaded yet. Please wait.');
+        return;
+      }
       doctorName = nameInput.value.trim() || "Unknown Doctor";
       score = 0;
       phase1Score = 0;
@@ -766,18 +1042,61 @@
       wave = 1;
       isSniper = false;
       scoreElement.textContent = score;
-      waveElement.textContent = wave;
+      targetsLeftElement.textContent = '5';
       weaponNameElement.textContent = "Scattered Distribution";
       weapons.scatteredWeapon.visible = true;
       weapons.precisionWeapon.visible = false;
-      crosshair.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" stroke="yellow" stroke-width="2" fill="none"/><circle cx="20" cy="20" r="4" fill="rgba(255,255,0,0.5)"/></svg>`;
+      crosshair.innerHTML = `<svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" stroke="yellow" stroke-width="2" fill="none"/><circle cx="24" cy="24" r="6" fill="rgba(255,255,0,0.5)"/></svg>`;
       camera.position.set(0, 10, 50);
       camera.rotation.set(0, 0, 0);
       instructionsScreen.style.display = 'none';
       gameOverScreen.style.display = 'none';
+      topScoresModal.style.display = 'none';
+      phaseHud.src = "assets/ui/phase-1-score.png";
+      phaseHud.style.display = 'block';
+      hud.style.display = 'inline-flex';
+      weaponImage.src = "assets/ui/Phase-1-weapon.png";
+      weaponImage.style.display = 'block';
+      logo.style.display = 'block';
+      sponsorBillboard.visible = true;
       isGameRunning = true;
-      createTargets();
+      if (!isMuted) {
+        backgroundMusic.currentTime = 0;
+        backgroundMusic.play();
+      }
+      showPhaseIntro("Phase 1: Scattered Distribution", (done) => {
+        createTargets(() => {
+          done();
+        });
+      });
       animate(performance.now());
+    }
+
+    function restartWithNewName() {
+      gameOverScreen.style.display = 'none';
+      instructionsScreen.style.display = 'block';
+      nameInput.value = '';
+      score = 0;
+      phase1Score = 0;
+      phase2Score = 0;
+      wave = 1;
+      isSniper = false;
+      scoreElement.textContent = score;
+      targetsLeftElement.textContent = '0';
+      weaponNameElement.textContent = "Scattered Distribution";
+      weapons.scatteredWeapon.visible = true;
+      weapons.precisionWeapon.visible = false;
+      crosshair.innerHTML = `<svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" stroke="yellow" stroke-width="2" fill="none"/><circle cx="24" cy="24" r="6" fill="rgba(255,255,0,0.5)"/></svg>`;
+      camera.position.set(0, 10, 50);
+      camera.rotation.set(0, 0, 0);
+      targets.forEach(target => scene.remove(target.mesh));
+      targets = [];
+      phaseHud.style.display = 'none';
+      hud.style.display = 'none';
+      weaponImage.style.display = 'none';
+      logo.style.display = 'none';
+      sponsorBillboard.visible = false;
+      isGameRunning = false;
     }
 
     function endGame() {
@@ -787,7 +1106,14 @@
       finalScoreElement.textContent = score;
       doctorNameDisplay.textContent = doctorName;
       gameOverScreen.style.display = 'block';
+      phaseHud.style.display = 'none';
+      hud.style.display = 'none';
+      weaponImage.style.display = 'none';
+      logo.style.display = 'none';
+      sponsorBillboard.visible = false;
       document.exitPointerLock();
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
       saveScoreToFile();
     }
 
@@ -813,6 +1139,60 @@
         } else {
           alert('No results saved in browser yet.');
         }
+      }
+    }
+
+    function viewTopScores() {
+      let scoresData = [];
+      
+      if (typeof require === 'function' && require('electron')) {
+        const fs = require('fs');
+        const filePath = 'game_results.json';
+        try {
+          if (fs.existsSync(filePath)) {
+            scoresData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          }
+        } catch (error) {
+          console.error('Error reading file:', error);
+          return;
+        }
+      } else {
+        const savedData = localStorage.getItem('gameResults');
+        if (savedData) {
+          scoresData = JSON.parse(savedData);
+        }
+      }
+
+      const sortedScores = scoresData
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .slice(0, 5);
+
+      topScoresList.innerHTML = '';
+      if (sortedScores.length > 0) {
+        sortedScores.forEach((entry, index) => {
+          const li = document.createElement('li');
+          li.textContent = `${index + 1}. ${entry.doctorName}: ${entry.totalScore}`;
+          topScoresList.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No scores recorded yet.';
+        topScoresList.appendChild(li);
+      }
+
+      wasGameOverVisible = (gameOverScreen.style.display === 'block');
+      wasInstructionsVisible = (instructionsScreen.style.display === 'block' || instructionsScreen.style.display === '');
+      gameOverScreen.style.display = 'none';
+      instructionsScreen.style.display = 'none';
+      topScoresModal.style.display = 'block';
+    }
+
+    function closeTopScores() {
+      topScoresModal.style.display = 'none';
+      if (wasGameOverVisible) {
+        gameOverScreen.style.display = 'block';
+      } else if (wasInstructionsVisible) {
+        instructionsScreen.style.display = 'block';
       }
     }
 
@@ -888,15 +1268,23 @@
       setupControls();
       createWeapons((loadedWeapons) => {
         weapons = loadedWeapons;
-        startButton.addEventListener('click', startGame);
-        restartButton.addEventListener('click', startGame);
-        viewResultsButton.addEventListener('click', viewSavedResults);
+        startButton.addEventListener('click', () => { startGame(); playClickSound(); });
+        restartButton.addEventListener('click', () => { startGame(); playClickSound(); });
+        newNameButton.addEventListener('click', () => { restartWithNewName(); playClickSound(); });
+        viewResultsButton.addEventListener('click', () => { viewSavedResults(); playClickSound(); });
+        viewTopScoresButton.addEventListener('click', () => { viewTopScores(); playClickSound(); });
+        viewTopScoresStartButton.addEventListener('click', () => { viewTopScores(); playClickSound(); });
+        closeTopScoresButton.addEventListener('click', () => { closeTopScores(); playClickSound(); });
+        muteButton.addEventListener('click', () => { toggleMute(); playClickSound(); });
         addPositioningHelpers();
       });
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        phaseHud.style.transform = 'translateX(-50%) perspective(1000px) rotateX(5deg)';
+        weaponImage.style.transform = 'perspective(1000px) rotateY(10deg)';
+        logo.style.transform = 'perspective(1000px) rotateY(-10deg)';
       });
       renderer.render(scene, camera);
     }

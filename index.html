@@ -613,7 +613,7 @@
       let zPos;
       let scale;
       let xPos;
-      let speedMultiplier = 1; // Default speed multiplier
+      let speedMultiplier = 1;
 
       if (isGoodTarget) {
         zPos = -80 + Math.random() * 40;
@@ -631,7 +631,6 @@
         zPos = rowDepths[rowIndex] + (Math.random() - 0.5) * 5;
         scale = rowSizes[rowIndex];
 
-        // Increase speed for the last two rows
         if (wave === 1 && rowIndex >= 3) { 
           speedMultiplier = 1.5; 
         } else if (wave === 2 && rowIndex >= 3) { 
@@ -659,7 +658,7 @@
             shininess: 30,
             emissiveIntensity: 0.5,
             roughness: 0.5,
-            transparent: false,
+            transparent: true, // Enable transparency for all targets
             opacity: 1.0,
             side: THREE.DoubleSide
           });
@@ -972,7 +971,9 @@
     function handleHit(hitTarget) {
       if (!hitTarget || hitTarget.hit) return;
       hitTarget.hit = true;
+      
       if (!hitTarget.isGoodTarget) {
+        // Diseased target (correct hit)
         const points = isSniper ? 200 : 100;
         score += points;
         if (wave === 1) phase1Score += points;
@@ -983,7 +984,7 @@
           opacity -= 0.1;
           hitTarget.mesh.traverse((child) => {
             if (child.isMesh) child.material.opacity = opacity;
-            if (child.isMesh) child.material.color.setHex(0x00ff00);
+            if (child.isMesh) child.material.color.setHex(0x00ff00); // Turn green as it fades
           });
           hitTarget.mesh.scale.multiplyScalar(1.05);
           if (opacity <= 0) {
@@ -1015,29 +1016,37 @@
           }
         }
       } else {
+        // Healthy target (wrong hit)
         const penalty = isSniper ? 100 : 50;
         score -= penalty;
         if (wave === 1) phase1Score -= penalty;
         else phase2Score -= penalty;
         updateScoreDisplay();
         playMistakeSound();
-        let originalColor;
+        
+        // Darken and make transparent
         hitTarget.mesh.traverse((child) => {
-          if (child.isMesh) originalColor = child.material.color.getHex();
-          if (child.isMesh) child.material.color.setHex(0xff0000);
+          if (child.isMesh) {
+            child.material.color.multiplyScalar(0.5); // Darken by 50%
+            child.material.opacity = 0.5; // More transparent
+            child.material.transparent = true; // Ensure transparency is enabled
+          }
         });
+
+        // Shake effect
         const originalPosition = hitTarget.mesh.position.clone();
         const shakeIntensity = 0.5;
         let shakesRemaining = 5;
         const shakeInterval = setInterval(() => {
           if (shakesRemaining <= 0) {
             hitTarget.mesh.position.copy(originalPosition);
-            hitTarget.mesh.traverse((child) => {
-              if (child.isMesh) child.material.color.setHex(originalColor);
-            });
             clearInterval(shakeInterval);
           } else {
-            hitTarget.mesh.position.set(originalPosition.x + (Math.random() - 0.5) * shakeIntensity, originalPosition.y + (Math.random() - 0.5) * shakeIntensity, originalPosition.z + (Math.random() - 0.5) * shakeIntensity);
+            hitTarget.mesh.position.set(
+              originalPosition.x + (Math.random() - 0.5) * shakeIntensity,
+              originalPosition.y + (Math.random() - 0.5) * shakeIntensity,
+              originalPosition.z + (Math.random() - 0.5) * shakeIntensity
+            );
             shakesRemaining--;
           }
         }, 50);
@@ -1302,12 +1311,6 @@
             break;
           case 'c': 
             targetHand.rotation.z += 0.1; 
-            break;
-          case '+': 
-            targetHand.scale.multiplyScalar(1.1); 
-            break;
-          case '-': 
-            targetHand.scale.multiplyScalar(0.9); 
             break;
           case 'p':
             console.log(`Hand position: (${targetHand.position.x.toFixed(2)}, ${targetHand.position.y.toFixed(2)}, ${targetHand.position.z.toFixed(2)})`);

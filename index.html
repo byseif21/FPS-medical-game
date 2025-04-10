@@ -35,17 +35,6 @@
       text-align: center; 
       display: none;
     }
-    #weaponInfo { 
-      position: absolute; 
-      bottom: 20px; 
-      right: 20px; 
-      color: white; 
-      font-size: 20px; 
-      z-index: 2; 
-      user-select: none; 
-      text-align: right; 
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
-    }
     #weaponImage { 
       width: 370px; 
       position: absolute; 
@@ -67,7 +56,7 @@
     #gameOverPopup, #instructionsPopup, #topScoresModal { 
       width: 475px; 
       position: absolute; 
-      top: 54%; 
+      top: 55%; 
       left: 50%; 
       transform: translate(-50%, -50%); 
       color: white; 
@@ -193,7 +182,6 @@
 <body>
   <img id="phaseHud" src="assets/ui/Phase-1-score.png" alt="Phase HUD" style="display: none;">
   <div id="hud"> <span id="score">0</span><br> <span id="targetsLeft">0</span></div>
-  <div id="weaponInfo">Medicine: <span id="weaponName">Scattered Distribution</span></div>
   <img id="weaponImage" src="assets/ui/Phase-1-weapon.png" alt="Weapon Icon" style="display: none;">
   <div id="crosshair">+</div>
   <div id="gameOverPopup">
@@ -286,7 +274,6 @@
     const hud = document.getElementById('hud');
     const scoreElement = document.getElementById('score');
     const targetsLeftElement = document.getElementById('targetsLeft');
-    const weaponNameElement = document.getElementById('weaponName');
     const weaponImage = document.getElementById('weaponImage');
     const gameOverPopup = document.getElementById('gameOverPopup');
     const finalScoreElement = document.getElementById('finalScore');
@@ -1030,7 +1017,6 @@
             isGameRunning = false;
             wave = 2;
             isSniper = true;
-            weaponNameElement.textContent = "Precision Targeting";
             weapons.scatteredWeapon.visible = false;
             weapons.precisionWeapon.visible = true;
             crosshair.innerHTML = `<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="2" fill="red"/><line x1="16" y1="6" x2="16" y2="12" stroke="red" stroke-width="1"/><line x1="16" y1="20" x2="16" y2="26" stroke="red" stroke-width="1"/><line x1="6" y1="16" x2="12" y2="16" stroke="red" stroke-width="1"/><line x1="20" y1="16" x2="26" y2="16" stroke="red" stroke-width="1"/></svg>`;
@@ -1132,7 +1118,6 @@
       isSniper = false;
       updateScoreDisplay();
       targetsLeftElement.textContent = '5';
-      weaponNameElement.textContent = "Scattered Distribution";
       weapons.scatteredWeapon.visible = true;
       weapons.precisionWeapon.visible = false;
       crosshair.innerHTML = `<svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44" stroke="yellow" stroke-width="2" fill="none"/><circle cx="48" cy="48" r="12" fill="rgba(255,255,0,0.5)"/></svg>`;
@@ -1175,7 +1160,6 @@
       isSniper = false;
       updateScoreDisplay();
       targetsLeftElement.textContent = '0';
-      weaponNameElement.textContent = "Scattered Distribution";
       weapons.scatteredWeapon.visible = true;
       weapons.precisionWeapon.visible = false;
       crosshair.innerHTML = `<svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44" stroke="yellow" stroke-width="2" fill="none"/><circle cx="48" cy="48" r="12" fill="rgba(255,255,0,0.5)"/></svg>`;

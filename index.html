@@ -4,7 +4,13 @@
   <title>Medical 3D Targeting Game</title>
   <style>
     body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-    #gameCanvas { position: absolute; width: 100%; height: 100%; z-index: 1; }
+    #gameCanvas { 
+      position: absolute; 
+      width: 100%; 
+      height: 100%; 
+      z-index: 1; 
+      cursor: none; 
+    }
     #phaseHud { 
       width: 500px; 
       position: absolute; 
@@ -58,13 +64,12 @@
       z-index: 2; 
       pointer-events: none; 
     }
-    #gameOver, #instructions, #topScoresModal { 
+    #gameOverPopup, #instructionsPopup, #topScoresModal { 
       width: 475px; 
       position: absolute; 
-      top: 50%; 
+      top: 54%; 
       left: 50%; 
       transform: translate(-50%, -50%); 
-      background-color: rgba(0, 0, 0, 0.8); 
       color: white; 
       padding: 15px; 
       border-radius: 10px; 
@@ -72,8 +77,26 @@
       z-index: 4; 
       max-width: 80%; 
     }
-    #gameOver { display: none; }
-    #topScoresModal { display: none; }
+    #gameOverPopup { display: none; }
+    #instructionsPopup { display: block; }
+    #topScoresModal { 
+      display: none; 
+      background-color: rgba(0, 0, 0, 0.8); 
+    }
+    #gameOverPopup img, #instructionsPopup img { 
+      height: 650px;
+      width: 585px; 
+      position: absolute; 
+      top: -130px; 
+      left: -40px; 
+      z-index: -1; 
+      border-radius: 10px; 
+      filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.7));
+    }
+    #gameOverPopup h2, #instructionsPopup h2 { 
+      margin: 0;
+      margin-top: 53px; 
+    }  
     #phaseIntro {
       position: absolute;
       top: 50%;
@@ -91,7 +114,7 @@
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     }
     button { 
-      background-color: #4CAF50; 
+      background-color: #a30313; 
       border: none; 
       color: white; 
       padding: 10px 20px; 
@@ -103,7 +126,7 @@
       cursor: pointer; 
       border-radius: 5px; 
     }
-    button:hover { background-color: #45a049; }
+    button:hover { background-color: #B42C2C; }
     .gold-button { 
       background-color: #FFD700; 
       color: black; 
@@ -128,27 +151,28 @@
     #topScoresList li:nth-child(1) { color: #FFD700; font-weight: bold; }
     #topScoresList li:nth-child(2) { color: #C0C0C0; }
     #topScoresList li:nth-child(3) { color: #CD7F32; }
-    #muteButton { 
+    #muteButton, #restartGameButton { 
       position: absolute; 
       top: 20px; 
-      left: 20px; 
       z-index: 3; 
+      width: 80px; 
+      padding: 10px 0; 
+      box-sizing: border-box; 
+    }
+    #muteButton { 
+      left: 20px; 
       background-color: #f44336; 
     }
     #muteButton.muted { 
       background-color: #4CAF50; 
     }
     #restartGameButton { 
-      margin-left: 30px;
-      position: absolute; 
-      top: 20px; 
-      left: 90px; 
-      z-index: 3; 
-      background-color: #2196F3; 
+      left: 110px; 
+      background-color: #FFD700; 
       display: none; 
     }
     #restartGameButton:hover { 
-      background-color: #1976D2; 
+      background-color: #E6C200; 
     }
     #logo { 
       width: 110px; 
@@ -172,7 +196,8 @@
   <div id="weaponInfo">Medicine: <span id="weaponName">Scattered Distribution</span></div>
   <img id="weaponImage" src="assets/ui/Phase-1-weapon.png" alt="Weapon Icon" style="display: none;">
   <div id="crosshair">+</div>
-  <div id="gameOver">
+  <div id="gameOverPopup">
+    <img src="assets/ui/Popup.png" alt="Game Over Background">
     <h2>Treatment Completed!</h2>
     <p>Phase 1 Score: <span id="phase1Score">0</span></p>
     <p>Phase 2 Score: <span id="phase2Score">0</span></p>
@@ -183,11 +208,10 @@
     <button id="viewResultsButton">View Saved Results</button>
     <button id="viewTopScoresButton" class="gold-button">View Top Scores</button>
   </div>
-  <div id="instructions">
-    <h2>Medical Targeting Simulation</h2>
-    <p>Enter Doctor's Name:</p>
+  <div id="instructionsPopup">
+    <img src="assets/ui/Popup.png" alt="Instructions Background">
+    <h2>Enter Doctor's Name:</h2>
     <input type="text" id="nameInput" placeholder="Doctor's Name">
-    <p>Learn how to target medicine at diseased cells:</p>
     <p><strong>Phase 1:</strong> Scattered Distribution (less precise)</p>
     <p><strong>Phase 2:</strong> Precision Targeting (accurate)</p>
     <p>Use the mouse to aim and left-click to administer treatment.</p>
@@ -203,7 +227,7 @@
   </div>
   <div id="phaseIntro"></div>
   <button id="muteButton">Mute</button>
-  <button id="restartGameButton" style="display: none;">Restart</button>
+  <button id="restartGameButton">Restart</button>
   <img id="logo" src="assets/ui/logo.png" alt="Game Logo" style="display: none;">
 
   <audio id="shotgunSound" src="assets/sounds/shotgun.mp3" preload="auto"></audio>
@@ -264,7 +288,7 @@
     const targetsLeftElement = document.getElementById('targetsLeft');
     const weaponNameElement = document.getElementById('weaponName');
     const weaponImage = document.getElementById('weaponImage');
-    const gameOverScreen = document.getElementById('gameOver');
+    const gameOverPopup = document.getElementById('gameOverPopup');
     const finalScoreElement = document.getElementById('finalScore');
     const phase1ScoreElement = document.getElementById('phase1Score');
     const phase2ScoreElement = document.getElementById('phase2Score');
@@ -273,7 +297,7 @@
     const newNameButton = document.getElementById('newNameButton');
     const viewResultsButton = document.getElementById('viewResultsButton');
     const viewTopScoresButton = document.getElementById('viewTopScoresButton');
-    const instructionsScreen = document.getElementById('instructions');
+    const instructionsPopup = document.getElementById('instructionsPopup');
     const startButton = document.getElementById('startButton');
     const viewTopScoresStartButton = document.getElementById('viewTopScoresStartButton');
     const nameInput = document.getElementById('nameInput');
@@ -328,6 +352,7 @@
       new Audio('assets/sounds/sniper.mp3'),
       new Audio('assets/sounds/sniper.mp3')
     ];
+    sniperSounds.forEach(sound => sound.volume = 0.3); 
     const clickSounds = [
       document.getElementById('clickSound'),
       new Audio('assets/sounds/arcade.mp3'),
@@ -658,7 +683,7 @@
             shininess: 30,
             emissiveIntensity: 0.5,
             roughness: 0.5,
-            transparent: true, // Enable transparency for all targets
+            transparent: true,
             opacity: 1.0,
             side: THREE.DoubleSide
           });
@@ -872,6 +897,13 @@
         createShotFeedback();
         addRecoilEffect();
       });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          document.exitPointerLock();
+          renderer.domElement.style.cursor = 'auto';
+        }
+      });
     }
 
     function createLaserEffect() {
@@ -973,7 +1005,6 @@
       hitTarget.hit = true;
       
       if (!hitTarget.isGoodTarget) {
-        // Diseased target (correct hit)
         const points = isSniper ? 200 : 100;
         score += points;
         if (wave === 1) phase1Score += points;
@@ -984,7 +1015,7 @@
           opacity -= 0.1;
           hitTarget.mesh.traverse((child) => {
             if (child.isMesh) child.material.opacity = opacity;
-            if (child.isMesh) child.material.color.setHex(0x00ff00); // Turn green as it fades
+            if (child.isMesh) child.material.color.setHex(0x00ff00);
           });
           hitTarget.mesh.scale.multiplyScalar(1.05);
           if (opacity <= 0) {
@@ -1016,7 +1047,6 @@
           }
         }
       } else {
-        // Healthy target (wrong hit)
         const penalty = isSniper ? 100 : 50;
         score -= penalty;
         if (wave === 1) phase1Score -= penalty;
@@ -1024,16 +1054,14 @@
         updateScoreDisplay();
         playMistakeSound();
         
-        // Darken and make transparent
         hitTarget.mesh.traverse((child) => {
           if (child.isMesh) {
-            child.material.color.multiplyScalar(0.5); // Darken by 50%
-            child.material.opacity = 0.5; // More transparent
-            child.material.transparent = true; // Ensure transparency is enabled
+            child.material.color.multiplyScalar(0.5);
+            child.material.opacity = 0.5;
+            child.material.transparent = true;
           }
         });
 
-        // Shake effect
         const originalPosition = hitTarget.mesh.position.clone();
         const shakeIntensity = 0.5;
         let shakesRemaining = 5;
@@ -1110,8 +1138,8 @@
       crosshair.innerHTML = `<svg width="96" height="96" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44" stroke="yellow" stroke-width="2" fill="none"/><circle cx="48" cy="48" r="12" fill="rgba(255,255,0,0.5)"/></svg>`;
       camera.position.set(0, 10, 50);
       camera.rotation.set(0, 0, 0);
-      instructionsScreen.style.display = 'none';
-      gameOverScreen.style.display = 'none';
+      instructionsPopup.style.display = 'none';
+      gameOverPopup.style.display = 'none';
       topScoresModal.style.display = 'none';
       phaseHud.src = "assets/ui/Phase-1-score.png";
       phaseHud.style.display = 'block';
@@ -1126,6 +1154,8 @@
         backgroundMusic.currentTime = 0;
         backgroundMusic.play();
       }
+      renderer.domElement.requestPointerLock();
+      renderer.domElement.style.cursor = 'none';
       showPhaseIntro("Phase 1: Scattered Distribution", (done) => {
         createTargets(() => {
           done();
@@ -1135,8 +1165,8 @@
     }
 
     function restartWithNewName() {
-      gameOverScreen.style.display = 'none';
-      instructionsScreen.style.display = 'block';
+      gameOverPopup.style.display = 'none';
+      instructionsPopup.style.display = 'block';
       nameInput.value = '';
       score = 0;
       phase1Score = 0;
@@ -1161,6 +1191,7 @@
       sponsorBillboard.visible = false;
       isGameRunning = false;
       document.exitPointerLock();
+      renderer.domElement.style.cursor = 'auto';
       backgroundMusic.pause();
       backgroundMusic.currentTime = 0;
     }
@@ -1171,7 +1202,7 @@
       phase2ScoreElement.textContent = phase2Score;
       finalScoreElement.textContent = score;
       doctorNameDisplay.textContent = doctorName;
-      gameOverScreen.style.display = 'block';
+      gameOverPopup.style.display = 'block';
       phaseHud.style.display = 'none';
       hud.style.display = 'none';
       weaponImage.style.display = 'none';
@@ -1179,6 +1210,7 @@
       restartGameButton.style.display = 'none';
       sponsorBillboard.visible = false;
       document.exitPointerLock();
+      renderer.domElement.style.cursor = 'auto';
       backgroundMusic.pause();
       backgroundMusic.currentTime = 0;
       saveScoreToFile();
@@ -1247,19 +1279,19 @@
         topScoresList.appendChild(li);
       }
 
-      wasGameOverVisible = (gameOverScreen.style.display === 'block');
-      wasInstructionsVisible = (instructionsScreen.style.display === 'block' || instructionsScreen.style.display === '');
-      gameOverScreen.style.display = 'none';
-      instructionsScreen.style.display = 'none';
+      wasGameOverVisible = (gameOverPopup.style.display === 'block');
+      wasInstructionsVisible = (instructionsPopup.style.display === 'block');
+      gameOverPopup.style.display = 'none';
+      instructionsPopup.style.display = 'none';
       topScoresModal.style.display = 'block';
     }
 
     function closeTopScores() {
       topScoresModal.style.display = 'none';
       if (wasGameOverVisible) {
-        gameOverScreen.style.display = 'block';
+        gameOverPopup.style.display = 'block';
       } else if (wasInstructionsVisible) {
-        instructionsScreen.style.display = 'block';
+        instructionsPopup.style.display = 'block';
       }
     }
 

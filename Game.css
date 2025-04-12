@@ -1,0 +1,280 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+  
+  #gameCanvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    cursor: none;
+  }
+  
+  #phaseHud {
+    width: 500px;
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%) perspective(1000px) rotateX(5deg);
+    z-index: 2;
+    user-select: none;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
+  }
+  
+  #hud {
+    position: absolute;
+    gap: 7.2rem;
+    top: 45px;
+    left: 49.3%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 24px;
+    z-index: 2;
+    user-select: none;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    text-align: center;
+    display: none;
+  }
+  
+  #weaponImage {
+    width: 370px; /* Default for Phase 1 */
+    position: absolute;
+    bottom: 25px;
+    left: 40px;
+    z-index: 2;
+    user-select: none;
+    transform: perspective(1000px) rotateY(10deg);
+    filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
+  }
+  
+  #crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  #gameOverPopup,
+  #instructionsPopup,
+  #topScoresModal,
+  #savedResultsModal {
+    width: 475px;
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 4;
+    max-width: 80%;
+  }
+  
+  #gameOverPopup #restartButton {
+    color: white;
+  }
+  
+  #gameOverPopup {
+    display: none;
+  }
+  
+  #instructionsPopup {
+    display: block;
+  }
+  
+  #topScoresModal,
+  #savedResultsModal {
+    display: none;
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+  
+  #gameOverPopup img,
+  #instructionsPopup img {
+    height: 650px;
+    width: 585px;
+    position: absolute;
+    top: -130px;
+    left: -40px;
+    z-index: -1;
+    border-radius: 10px;
+    filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.7));
+  }
+  
+  #gameOverPopup h2,
+  #instructionsPopup h2 {
+    margin: 0;
+    margin-top: 53px;
+  }
+  
+  #phaseIntro {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 20px;
+    font-size: 28px;
+    text-align: center;
+    z-index: 5;
+    border-radius: 8px;
+    display: none;
+    user-select: none;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  }
+  
+  #timer {
+    position: absolute;
+    top: 27px; /* Aligns with the top of the buttons */
+    left: 260px; /* Positions it to the right of #restartGameButton (110px + 80px + spacing) */
+    color: white;
+    font-size: 40px; /* Larger than buttons (16px) */
+    z-index: 2;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    display: none;
+  }
+  
+  @media screen and (max-width: 1250px) {
+    #timer {
+      left: 25px !important;
+      top: 70px !important;
+    }
+  }
+  
+  @media screen and (max-width: 1286px) {
+    #timer {
+      left: 220px;
+      top: 27px;
+    }
+  }
+  
+  button {
+    background-color: #a30313;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  button:hover {
+    background-color: #B42C2C;
+  }
+  
+  .gold-button {
+    background-color: #FFD700;
+    color: black;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .gold-button:hover {
+    background-color: #E6C200;
+  }
+  
+  #restartButton {
+    color: black;
+  }
+  
+  .hitmarker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 24px;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s;
+    z-index: 3;
+  }
+  
+  #nameInput {
+    margin: 10px;
+    padding: 5px;
+    font-size: 16px;
+    width: 200px;
+  }
+  
+  #topScoresList,
+  #savedResultsList {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  #topScoresList li,
+  #savedResultsList li {
+    padding: 8px;
+    font-size: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  #topScoresList li:nth-child(1) {
+    color: #FFD700;
+    font-weight: bold;
+  }
+  
+  #topScoresList li:nth-child(2) {
+    color: #C0C0C0;
+  }
+  
+  #topScoresList li:nth-child(3) {
+    color: #CD7F32;
+  }
+  
+  #muteButton,
+  #restartGameButton {
+    position: absolute;
+    top: 20px;
+    z-index: 3;
+    width: 80px;
+    padding: 10px 0;
+    box-sizing: border-box;
+  }
+  
+  #muteButton {
+    left: 20px;
+    background-color: #f44336;
+  }
+  
+  #muteButton.muted {
+    background-color: #4CAF50;
+  }
+  
+  #restartGameButton {
+    left: 110px;
+    background-color: #FFD700;
+    display: none;
+    color: black;
+  }
+  
+  #restartGameButton:hover {
+    background-color: #E6C200;
+  }
+  
+  #logo {
+    width: 110px;
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    z-index: 2;
+    user-select: none;
+    transform: perspective(1000px) rotateY(-10deg);
+    filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5)) brightness(1.1);
+  }
+  
+  #score {
+    transition: color 0.3s ease;
+  }

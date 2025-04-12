@@ -797,7 +797,7 @@ function saveScore(results) {
       const points = isSniper ? 200 : 100;
       score += points;
       if (wave === 1) phase1Score += points;
-      else phase2Score += points;
+      updateScoreDisplay();
       scoreElement.textContent = score;
       let opacity = 0.9;
       const fadeInterval = setInterval(() => {

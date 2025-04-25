@@ -26,7 +26,7 @@ body {
   #hud {
     position: absolute;
     gap: 7.2rem;
-    top: 45px;
+    top: 47px;
     left: 49.3%;
     transform: translateX(-50%);
     color: white;
@@ -98,7 +98,7 @@ body {
     height: 650px;
     width: 585px;
     position: absolute;
-    top: -130px;
+    top: -140px;
     left: -40px;
     z-index: -1;
     border-radius: 10px;
@@ -108,7 +108,7 @@ body {
   #gameOverPopup h2,
   #instructionsPopup h2 {
     margin: 0;
-    margin-top: 53px;
+    margin-top: 30px;
   }
   
   #phaseIntro {

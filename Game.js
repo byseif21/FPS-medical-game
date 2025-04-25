@@ -792,69 +792,76 @@ function saveScore(results) {
   function handleHit(hitTarget) {
     if (!hitTarget || hitTarget.hit) return;
     hitTarget.hit = true;
-  
+
     if (!hitTarget.isGoodTarget) {
-      const points = isSniper ? 200 : 100;
-      score += points;
-      if (wave === 1) phase1Score += points;
-      updateScoreDisplay();
-      scoreElement.textContent = score;
-      let opacity = 0.9;
-      const fadeInterval = setInterval(() => {
-        opacity -= 0.1;
-        hitTarget.mesh.traverse((child) => {
-          if (child.isMesh) child.material.opacity = opacity;
-          if (child.isMesh) child.material.color.setHex(0x00ff00);
-        });
-        hitTarget.mesh.scale.multiplyScalar(1.05);
-        if (opacity <= 0) {
-          scene.remove(hitTarget.mesh);
-          clearInterval(fadeInterval);
-        }
-      }, 40);
-      const remainingBadTargets = targets.filter(t => !t.isGoodTarget && !t.hit).length;
-      targetsLeftElement.textContent = remainingBadTargets;
-      if (remainingBadTargets === 0 && timeLeft > 0) {
+        const points = isSniper ? 200 : 100;
+        score += points;
         if (wave === 1) {
-          transitionToPhase2();
+            phase1Score += points;
         } else {
-          endGame();
+            phase2Score += points;
         }
-      }
+        updateScoreDisplay();
+        scoreElement.textContent = score;
+        let opacity = 0.9;
+        const fadeInterval = setInterval(() => {
+            opacity -= 0.1;
+            hitTarget.mesh.traverse((child) => {
+                if (child.isMesh) child.material.opacity = opacity;
+                if (child.isMesh) child.material.color.setHex(0x00ff00);
+            });
+            hitTarget.mesh.scale.multiplyScalar(1.05);
+            if (opacity <= 0) {
+                scene.remove(hitTarget.mesh);
+                clearInterval(fadeInterval);
+            }
+        }, 40);
+        const remainingBadTargets = targets.filter(t => !t.isGoodTarget && !t.hit).length;
+        targetsLeftElement.textContent = remainingBadTargets;
+        if (remainingBadTargets === 0 && timeLeft > 0) {
+            if (wave === 1) {
+                transitionToPhase2();
+            } else {
+                endGame();
+            }
+        }
     } else {
-      const penalty = isSniper ? 100 : 50;
-      score -= penalty;
-      if (wave === 1) phase1Score -= penalty;
-      else phase2Score -= penalty;
-      updateScoreDisplay();
-      playMistakeSound();
-  
-      hitTarget.mesh.traverse((child) => {
-        if (child.isMesh) {
-          child.material.color.multiplyScalar(0.5);
-          child.material.opacity = 0.5;
-          child.material.transparent = true;
-        }
-      });
-  
-      const originalPosition = hitTarget.mesh.position.clone();
-      const shakeIntensity = 0.5;
-      let shakesRemaining = 5;
-      const shakeInterval = setInterval(() => {
-        if (shakesRemaining <= 0) {
-          hitTarget.mesh.position.copy(originalPosition);
-          clearInterval(shakeInterval);
+        const penalty = isSniper ? 100 : 50;
+        score -= penalty;
+        if (wave === 1) {
+            phase1Score -= penalty;
         } else {
-          hitTarget.mesh.position.set(
-            originalPosition.x + (Math.random() - 0.5) * shakeIntensity,
-            originalPosition.y + (Math.random() - 0.5) * shakeIntensity,
-            originalPosition.z + (Math.random() - 0.5) * shakeIntensity
-          );
-          shakesRemaining--;
+            phase2Score -= penalty;
         }
-      }, 50);
+        updateScoreDisplay();
+        playMistakeSound();
+
+        hitTarget.mesh.traverse((child) => {
+            if (child.isMesh) {
+                child.material.color.multiplyScalar(0.5);
+                child.material.opacity = 0.5;
+                child.material.transparent = true;
+            }
+        });
+
+        const originalPosition = hitTarget.mesh.position.clone();
+        const shakeIntensity = 0.5;
+        let shakesRemaining = 5;
+        const shakeInterval = setInterval(() => {
+            if (shakesRemaining <= 0) {
+                hitTarget.mesh.position.copy(originalPosition);
+                clearInterval(shakeInterval);
+            } else {
+                hitTarget.mesh.position.set(
+                    originalPosition.x + (Math.random() - 0.5) * shakeIntensity,
+                    originalPosition.y + (Math.random() - 0.5) * shakeIntensity,
+                    originalPosition.z + (Math.random() - 0.5) * shakeIntensity
+                );
+                shakesRemaining--;
+            }
+        }, 50);
     }
-  }
+}
   
   function transitionToPhase2() {
     clearInterval(phaseTimer);

@@ -138,34 +138,26 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     display: none;
   }
-  
-  @media screen and (max-width: 1212px) {
-    #timer {
-      left: 25px !important;
-      top: 70px !important;
-   }
-  }
 
-  @media screen and (max-width: 1250px) {
+  @media screen and (max-width: 1214px) {
     #timer {
       left: 25px !important;
       top: 70px !important;
     }
   }
-  
-  @media screen and (max-width: 1286px) {
-    #timer {
-      left: 220px;
-      top: 27px;
-    }
-  }
 
-  @media screen and (max-width: 1290px) {
+  @media screen and (min-width: 1270px) {
     #timer {
       left: 225px !important;
       top: 27px  !important;
-    }
-    
+    } 
+  }
+
+  @media screen and (min-width: 1300px) {
+    #timer {
+      left: 270px !important;
+      top: 27px  !important;
+    } 
   }
   
   button {

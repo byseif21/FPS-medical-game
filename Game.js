@@ -285,7 +285,7 @@ function saveScore(results) {
       mountainVertices[i + 2] = z * scale;
     }
     mountainGeometry.computeVertexNormals();
-    const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0xAB7A4B, shininess: 12, flatShading: false });
+    const mountainMaterial = new THREE.MeshPhongMaterial({ color: 0x8C6239, shininess: 10, flatShading: false });
     for (let i = 0; i < 3; i++) {
       const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
       mountain.position.set(-50 + i * 50, -5, -300);
@@ -327,7 +327,8 @@ function saveScore(results) {
     const sponsorMaterial = new THREE.MeshPhongMaterial({
       map: sponsorTexture,
       transparent: true,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      color: 0xAAAAAA
     });
     sponsorBillboard = new THREE.Mesh(sponsorGeometry, sponsorMaterial);
     sponsorBillboard.position.set(0, 3, -20);
@@ -355,7 +356,7 @@ function saveScore(results) {
   
     const ambientLight = new THREE.AmbientLight(0x606060, 1.5);
     scene.add(ambientLight);
-    const sunlight = new THREE.DirectionalLight(0xFFFFFF, 2.5);
+    const sunlight = new THREE.DirectionalLight(0xFFFFFF, 2.2);
     sunlight.position.set(50, 100, 50);
     sunlight.castShadow = true;
     sunlight.shadow.mapSize.width = 1024;
@@ -366,6 +367,7 @@ function saveScore(results) {
     sunlight.shadow.camera.right = terrainSize / 2;
     sunlight.shadow.camera.top = terrainSize / 2;
     sunlight.shadow.camera.bottom = -terrainSize / 2;
+    sunlight.shadow.bias = -0.0001;
     scene.add(sunlight);
   }
   

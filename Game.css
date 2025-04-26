@@ -139,6 +139,13 @@ body {
     display: none;
   }
   
+  @media screen and (max-width: 1212px) {
+    #timer {
+      left: 25px !important;
+      top: 70px !important;
+   }
+  }
+
   @media screen and (max-width: 1250px) {
     #timer {
       left: 25px !important;
@@ -152,9 +159,17 @@ body {
       top: 27px;
     }
   }
+
+  @media screen and (max-width: 1290px) {
+    #timer {
+      left: 225px !important;
+      top: 27px  !important;
+    }
+    
+  }
   
   button {
-    background-color: #a30313;
+    background-color: #4AA432;
     border: none;
     color: white;
     padding: 10px 20px;
@@ -168,17 +183,17 @@ body {
   }
   
   button:hover {
-    background-color: #B42C2C;
+    background-color: #3A8728;
   }
   
   .gold-button {
-    background-color: #FFD700;
-    color: black;
+    background-color: #33C1FF;
+    color: rgb(255, 255, 255);
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   }
   
   .gold-button:hover {
-    background-color: #E6C200;
+    background-color: #00A3CA;
   }
   
   #restartButton {
@@ -246,7 +261,7 @@ body {
   
   #muteButton {
     left: 20px;
-    background-color: #f44336;
+    background-color: #5ABF41;
   }
   
   #muteButton.muted {
@@ -255,13 +270,12 @@ body {
   
   #restartGameButton {
     left: 110px;
-    background-color: #FFD700;
+    background-color: #33C1FF;
     display: none;
-    color: black;
   }
   
   #restartGameButton:hover {
-    background-color: #E6C200;
+    background-color: #00A3CA;
   }
   
   #logo {
